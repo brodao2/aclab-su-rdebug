@@ -1,0 +1,250 @@
+{
+  "name": "aclab-su-rdebug",
+  "displayName": "AC Lab SketchUp Extension Debugger",
+  "description": "Allows debugging of SU extensions.",
+  "version": "0.0.1",
+  "preview": true,
+  "publisher": "brodao-lab",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "contributors": [
+    {
+      "name": "Alan Cândido",
+      "email": "brodao@gmail.com",
+      "url": "https://github.com/brodao2"
+    }
+  ],
+  "categories": [
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onDebug"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "-- TEST --": "",
+    "test": "vscode-test",
+    "pretest": "npm run compile && npm run lint",
+    "---RELEASE---": "",
+    "release": "npx standard-version --skip.changelog --release-as 0.0.0.1",
+    "tag": "git push --follow-tags origin dev",
+    "package": "vsce package",
+    "package-pr": "vsce package --pre-release",
+    "publish": "vsce publish",
+    "vscode:prepublish": "npm run compile",
+    "-- LINT --": "",
+    "lint": "eslint src --ext ts",
+    "--- CONTRIBUTORS ---": "",
+    "contributors:add": "all-contributors add",
+    "contributors:generate": "all-contributors generate",
+    "contributors:check": "all-contributors check"
+  },
+  "dependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/debugadapter": "^1.64.0",
+    "@vscode/debugadapter-testsupport": "^1.64.0",
+    "@vscode/debugprotocol": "^1.64.0",
+    "@vscode/vsce": "^2.22.0",
+    "all-contributors-cli": "^6.26.1",
+    "await-notify": "^1.0.1",
+    "vscode-debugadapter-testsupport": "1.51.0",
+    "vscode-extension-tester": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.10.6",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.18.0",
+    "@typescript-eslint/parser": "^6.18.0",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "contributes": {
+    "breakpoints": [
+      {
+        "language": "ruby"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "aclab-su-rdebug",
+        "languages": [
+          "ruby"
+        ],
+        "label": "Attach to SketchUp",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "sketchUpProgram"
+            ],
+            "properties": {
+              "sketchUpProgram": {
+                "type": "string",
+                "description": "Absolute path to a SketchUp executable file.",
+                "default": ""
+              },
+              "sketchUpArguments": {
+                "type": "array",
+                "description": "SketchUp program arguments.",
+                "default": []
+              },
+              "remotePort": {
+                "type": "number",
+                "description": "Remote port.",
+                "default": 7000
+              },
+              "extensionDevelopmentPath": {
+                "type": "string",
+                "description": "Extension Development Path (root).",
+                "default": "${workspaceFolder}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after attach.",
+                "default": true
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              }
+            }
+          },
+          "attach": {
+            "properties": {
+              "remotePort": {
+                "type": "number",
+                "description": "Remote port.",
+                "default": 7000
+              },
+              "extensionDevelopmentPath": {
+                "type": "string",
+                "description": "Extension Development Path (root).",
+                "default": "${workspaceFolder}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after attach.",
+                "default": true
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "aclab-su-rdebug",
+            "request": "attach",
+            "name": "Attach to SketchUp",
+            "sketchUpProgram": "C:\\\\Program Files\\\\SketchUp\\\\SketchUp 2023\\\\SketchUp.exe",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "SU: Attach to SketchUp already running",
+            "description": "A new setting for debugging a SketchUp extension by attaching to an already running instance.",
+            "body": {
+              "type": "aclab-su-rdebug",
+              "request": "attach",
+              "name": "Attach to SketchUp",
+              "remotePort": 7000,
+              "stopOnEntry": true
+            }
+          },
+          {
+            "label": "SU: Launch SketchUp and attach then",
+            "description": "A new setting for debugging a SketchUp extension by launching an instance and attaching to it.",
+            "body": {
+              "type": "aclab-su-rdebug",
+              "request": "launch",
+              "name": "Launch SketchUp and attach",
+              "sketchUpProgram": "C:\\\\Program Files\\\\SketchUp\\\\SketchUp ${1|2023,2022,2021,2020,2019}\\\\SketchUp.exe",
+              "remotePort": 7000,
+              "stopOnEntry": true,
+              "sketchUpArguments": [
+                "\\${workspaceFolder}\\\\sample\\\\${sampleFile}.skp"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "views": {
+      "debug": [
+        {
+          "id": "rdbg.inspector",
+          "name": "Trace Inspector"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "rdbg.inspector.openPrevLog",
+        "title": "Go back to the previous log",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "rdbg.inspector.openNextLog",
+        "title": "Go to the next trace log",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "rdbg.inspector.disableTraceLine",
+        "title": "✓ Trace Line"
+      },
+      {
+        "command": "rdbg.inspector.enableTraceLine",
+        "title": "\u200B    Trace Line"
+      },
+      {
+        "command": "rdbg.inspector.disableTraceCall",
+        "title": "✓ Trace Call / Return"
+      },
+      {
+        "command": "rdbg.inspector.enableTraceCall",
+        "title": "\u200B    Trace Call / Return"
+      },
+      {
+        "command": "rdbg.inspector.disableRecordAndReplay",
+        "title": "✓ Record And Replay (Slow)"
+      },
+      {
+        "command": "rdbg.inspector.enableRecordAndReplay",
+        "title": "\u200B    Record And Replay (Slow)",
+        "enablement": "traceLineEnabled"
+      },
+      {
+        "command": "rdbg.inspector.enterFilter",
+        "title": "\u200B    Apply filter by RegExp"
+      },
+      {
+        "command": "rdbg.inspector.reenterFilter",
+        "title": "✓ Apply filter by RegExp"
+      },
+      {
+        "command": "rdbg.inspector.copyLog",
+        "title": "Copy Trace log"
+      },
+      {
+        "command": "rdbg.inspector.enableTraceClanguageCall",
+        "title": "\u200B    Trace c_call / c_return"
+      },
+      {
+        "command": "rdbg.inspector.disableTraceClanguageCall",
+        "title": "✓ Trace c_call / c_return"
+      }
+    ]
+  }
+}
