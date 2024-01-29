@@ -1,0 +1,25 @@
+{
+  "projectName": "aclab-su-rdebug",
+  "projectOwner": "brodao2",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 50,
+  "commit": false,
+  "commitConvention": "gitmoji",
+  "contributors": [
+    {
+      "login": "brodao2",
+      "name": "Alan Cândido",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114854608?v=4",
+      "profile": "https://github.com/brodao2",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    }
+  ],
+  "contributorsPerLine": 6
+}
