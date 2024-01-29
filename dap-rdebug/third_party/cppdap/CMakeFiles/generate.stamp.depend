@@ -1,0 +1,7 @@
+# CMake generation dependency list for this directory.
+D:/CMake/share/cmake-3.27/Modules/BasicConfigVersion-SameMinorVersion.cmake.in
+D:/CMake/share/cmake-3.27/Modules/CMakePackageConfigHelpers.cmake
+D:/CMake/share/cmake-3.27/Modules/GNUInstallDirs.cmake
+D:/CMake/share/cmake-3.27/Modules/WriteBasicConfigVersionFile.cmake
+P:/sketchup/aclab-su-rdebug/third_party/cppdap/CMakeLists.txt
+P:/sketchup/aclab-su-rdebug/third_party/cppdap/cmake/Config.cmake.in
