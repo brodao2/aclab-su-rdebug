@@ -26,6 +26,8 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "-- UPD BIN --": "",
+    "upd-bin": "cmd /c copy ..\\dap-rdebug\\out\\build\\x64-debug\\dap-rdebug.??? .\\bin",
     "-- TEST --": "",
     "test": "vscode-test",
     "pretest": "npm run compile && npm run lint",
@@ -48,6 +50,7 @@
     "@vscode/debugadapter": "^1.64.0",
     "@vscode/debugadapter-testsupport": "^1.64.0",
     "@vscode/debugprotocol": "^1.64.0",
+    "@vscode/test-electron": "^2.3.9",
     "@vscode/vsce": "^2.22.0",
     "all-contributors-cli": "^6.26.1",
     "await-notify": "^1.0.1",
@@ -103,15 +106,25 @@
                 "description": "Extension Development Path (root).",
                 "default": "${workspaceFolder}"
               },
-              "stopOnEntry": {
-                "type": "boolean",
-                "description": "Automatically stop after attach.",
-                "default": true
-              },
               "trace": {
-                "type": "boolean",
-                "description": "Enable logging of the Debug Adapter Protocol.",
-                "default": true
+                "type": "string",
+                "default": "off",
+                "enum": [
+                  "off",
+                  "messages",
+                  "verbose"
+                ],
+                "description": "Traces the communication between VS Code and the Debug Adapter executable.",
+                "enumDescriptions": [
+                  "Tracking off.",
+                  "Display summary message",
+                  "Display detailed message"
+                ]
+              },
+              "logToFile": {
+                "type": "string",
+                "description": "Filename to record log of the Debug Adapter executable file.",
+                "default": ""
               }
             }
           },
@@ -127,15 +140,25 @@
                 "description": "Extension Development Path (root).",
                 "default": "${workspaceFolder}"
               },
-              "stopOnEntry": {
-                "type": "boolean",
-                "description": "Automatically stop after attach.",
-                "default": true
-              },
               "trace": {
-                "type": "boolean",
-                "description": "Enable logging of the Debug Adapter Protocol.",
-                "default": true
+                "type": "string",
+                "default": "off",
+                "enum": [
+                  "off",
+                  "messages",
+                  "verbose"
+                ],
+                "description": "Traces the communication between VS Code and the Debug Adapter executable.",
+                "enumDescriptions": [
+                  "Tracking off.",
+                  "Display summary message",
+                  "Display detailed message"
+                ]
+              },
+              "logToFile": {
+                "type": "string",
+                "description": "Filename to record log of the Debug Adapter executable file.",
+                "default": ""
               }
             }
           }

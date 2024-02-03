@@ -17,10 +17,13 @@ add_executable (dap-rdebug "dap-rdebug.cpp" "dap-rdebug.h")
 set(CPPDAP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppdap) # example <path-to-cppdap>: "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppdap"
 add_subdirectory(${CPPDAP_DIR})
 
+set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/spdlog) # example <path-to-cppdap>: "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppdap"
+add_subdirectory(${SPDLOG_DIR})
+
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET dap-rdebug PROPERTY CXX_STANDARD 20)
 endif()
 
-target_link_libraries(dap-rdebug cppdap) # replace <target> with the name of your project's target
+target_link_libraries(dap-rdebug cppdap spdlog::spdlog_header_only) # replace <target> with the name of your project's target
 # TODO: Adicione testes e instale destinos, se necessário.
 
