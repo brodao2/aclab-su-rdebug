@@ -1,3 +1,6 @@
 [submodule "dap-rdebug/third_party/spdlog"]
 	path = dap-rdebug/third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "dap-rdebug/third_party/cxxopts"]
+	path = dap-rdebug/third_party/cxxopts
+	url = https://github.com/jarro2783/cxxopts

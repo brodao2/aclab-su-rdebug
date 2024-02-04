@@ -1,5 +1,6 @@
 #include "logger.h"
 #include <string.h> 
+#include "config.h"
 
 /*
 	trace = SPDLOG_LEVEL_TRACE,
@@ -10,24 +11,41 @@
 	critical = SPDLOG_LEVEL_CRITICAL,
 	off = SPDLOG_LEVEL_OFF,
 */
+
 Logger::Logger() {
+	Config* config = Config::getInstance();
 	//spdlog::set_pattern("[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
 	//spdlog::set_pattern("[%H:%M:%S] [%n] [%-5l] [%6t] %v");
 	//spdlog::set_pattern("[%H:%M:%S] [dap-rdebug] [%-5l] [%6t] %v");
-	spdlog::set_pattern("[%H:%M:%e] [dap-rdebug] [%6t] [%L]%v");
-	spdlog::set_level(spdlog::level::trace);
+	spdlog::set_pattern("[%H:%M:%e] [dap-rdebug] [%6t] [%L] %v");
+	spdlog::set_level(static_cast<spdlog::level::level_enum>(config->getLogLevel()));
 
 	//this->console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>("console");
 	this->console = spdlog::stdout_color_mt("console");
 
-	//this->console->set_level(spdlog::level::trace);
+	if (config->getLogFile() != "") {
+		//this->fileLog = std::make_shared<spdlog::sinks::basic_file_sink_mt>("file", filename, true);
+		this->fileLog = spdlog::basic_logger_mt("file", config->getLogFile(), true);
+
+		if (config->getLogLevel() > 0) {
+			this->fileLog->set_level(static_cast<spdlog::level::level_enum>(config->getLogLevel() - 1));
+		}
+		else {
+			this->fileLog->set_level(spdlog::level::trace);
+		}
+
+		//delete this->allLoggers;
+		//this->allLoggers = new spdlog::logger("all", { this->console, this->fileLog });
+	}
+	else {
 	//this->allLoggers = new spdlog::logger("all", { this->console });
+	}
 }
 
 Logger::~Logger() {
 	if (!this->chronoMap.empty()) {
 		std::string message = "There are unfinished chrono records. Labels: ";
-		
+
 		for (auto ci = this->chronoMap.begin(); ci != this->chronoMap.end(); ci++)
 		{
 			std::string label = ci->first;
@@ -40,7 +58,7 @@ Logger::~Logger() {
 			message.pop_back();
 			message.pop_back();
 		}
-		
+
 		this->chronoMap.clear();
 		this->debug(message);
 	}
@@ -49,23 +67,6 @@ Logger::~Logger() {
 	//this->console = nullptr;
 	//this->fileLog.reset();
 	//this->fileLog = nullptr;
-}
-
-void Logger::setFilename(std::string filename) {
-    
-    if (this->fileLog != nullptr) {
-        this->fileLog.reset();
-		this->fileLog = nullptr;
-    }
-
-	//this->fileLog = std::make_shared<spdlog::sinks::basic_file_sink_mt>("file", filename, true);
-	this->fileLog = spdlog::basic_logger_mt("file", filename, true);
-	
-
-	this->fileLog->set_level(spdlog::level::trace);
-
-	//delete this->allLoggers;
-	//this->allLoggers = new spdlog::logger("all", { this->console, this->fileLog });
 }
 
 void Logger::debug(std::string message, ...) {
@@ -84,7 +85,7 @@ void Logger::info(std::string message, ...) {
 	if (this->fileLog != nullptr) {
 		this->fileLog->info(message);
 	}
-	
+
 	//this->allLoggers->info(message);
 }
 
@@ -104,7 +105,7 @@ void Logger::error(std::string message, ...) {
 	if (this->fileLog != nullptr) {
 		this->fileLog->error(message);
 	}
-	
+
 	//this->allLoggers->error(message);
 }
 
@@ -114,37 +115,37 @@ void Logger::warn(std::string message, ...) {
 	if (this->fileLog != nullptr) {
 		this->fileLog->warn(message);
 	}
-	
+
 	//this->allLoggers->warn(message);
 }
 
-void Logger::_startTrace(std::string label) {
-	this->console->trace("[{}]: start", label);
+void Logger::startTrace(std::string label) {
+	this->console->trace("[{}] start", label);
 
 	if (this->fileLog != nullptr) {
-		this->fileLog->trace("[{}]: start", label);
+		this->fileLog->trace("[{}] start", label);
 	}
 
 	this->startChrono(label);
 	//this->allLoggers->trace(message);
 }
 
-void Logger::_trace(std::string label, std::string message, ...) {
+void Logger::trace(std::string label, std::string message, ...) {
 	this->console->trace(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->trace(message);
 	}
-	
+
 	this->chrono(label);
 	//this->allLoggers->trace(message);
 }
 
-void Logger::_endTrace(std::string label) {
-	this->console->trace("[{}]: end", label);
+void Logger::endTrace(std::string label) {
+	this->console->trace("[{}] end", label);
 
 	if (this->fileLog != nullptr) {
-		this->fileLog->trace("[{}]: end", label);
+		this->fileLog->trace("[{}] end", label);
 	}
 
 	this->endChrono(label);
@@ -153,7 +154,7 @@ void Logger::_endTrace(std::string label) {
 
 void Logger::startChrono(std::string label) {
 	this->debug("chrono start: " + label);
-	
+
 	this->chronoMap.insert({ label, new spdlog::stopwatch() });
 }
 
@@ -169,7 +170,7 @@ void Logger::endChrono(std::string label) {
 	if (this->chronoMap.contains(label)) {
 		spdlog::stopwatch* sw = this->chronoMap.at(label);
 		this->chronoMap.erase(label);
-		
+
 		this->console->trace("[{0}] Elpased {1:.3} ms", label.c_str(), sw->elapsed().count());
 
 		delete sw;

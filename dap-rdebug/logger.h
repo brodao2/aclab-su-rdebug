@@ -5,6 +5,25 @@
 #include <spdlog/stopwatch.h>
 #include <map>
 
+//#define stringify( name ) #name
+
+static const char* _enum_level_to_string[] = {
+	//stringify(spdlog::level::level_enum::trace),
+	//stringify(spdlog::level::level_enum::debug),
+	//stringify(spdlog::level::level_enum::info),
+	//stringify(spdlog::level::level_enum::warn),
+	//stringify(spdlog::level::level_enum::error),
+	//stringify(spdlog::level::level_enum::critical),
+	//stringify(spdlog::level::level_enum::off)
+	"trace",
+	"debug",
+	"info",
+	"warn",
+	"error",
+	"critical",
+	"off"
+};
+
 class Logger {
 private:
 	//std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console = nullptr;
@@ -31,11 +50,10 @@ public:
 		return &instance;
 	}
 
-	void setFilename(std::string filename);
+	void startTrace(std::string label);
+	void trace(std::string label, std::string message, ...);
+	void endTrace(std::string label);
 
-	void _startTrace(std::string label);
-	void _trace(std::string label, std::string message, ...);
-	void _endTrace(std::string label);
 	void debug(std::string message, ...);
 	void info(std::string message, ...);
 	void warn(std::string message, ...);
