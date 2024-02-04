@@ -23,7 +23,29 @@
 #include <condition_variable>
 #include <mutex>
 
+#include "logger.h"
 int main(int, char* []) {
+    Logger* logger = Logger::getInstance();
+    logger->_startTrace("main");
+
+    logger->info("antes de setar arquivo");
+    logger->info("=====================");
+    logger->info("=====================");
+    logger->info("=====================");
+    logger->info("=====================");
+    logger->info("=====================");
+
+    logger->setFilename("./dap-rdebug.log");
+    logger->info("Começando ....");
+
+    logger->debug    ("SPDLOG_LEVEL_DEBUG");
+    logger->info     ("SPDLOG_LEVEL_INFO");
+    logger->warn     ("SPDLOG_LEVEL_WARN");
+    logger->error      ("SPDLOG_LEVEL_ERROR");
+    logger->critical ("SPDLOG_LEVEL_CRITICAL");
+    //logger->off = SPDLOG_LEVEL_OFF,
+    logger->_trace("main", "SPDLOG_LEVEL_TRACE");
+
     constexpr int kPort = 19021;
 
     // Callback handler for a socket connection to the server
@@ -42,7 +64,8 @@ int main(int, char* []) {
         // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
         session->registerHandler([&](const dap::InitializeRequest&) {
             dap::InitializeResponse response;
-            printf("Server received initialize request from client\n");
+            logger->info("Server received initialize request from client");
+
             return response;
             });
 
@@ -69,11 +92,14 @@ int main(int, char* []) {
         // client.
         std::unique_lock<std::mutex> lock(mutex);
         cv.wait_for(lock, std::chrono::seconds(5), [&] { return terminate; });
-        printf("Server closing connection\n");
+        logger->info("Server closing connection");
+        logger->_trace("main", "close");
         };
 
     // Error handler
-    auto onError = [&](const char* msg) { printf("Server error: %s\n", msg); };
+    auto onError = [&](const char* msg) { 
+        logger->error("Server error: %s", msg);
+    };
 
     // Create the network server
     auto server = dap::net::Server::create();
@@ -86,7 +112,7 @@ int main(int, char* []) {
     // connection.
     auto client = dap::net::connect("localhost", kPort);
     if (!client) {
-        printf("Couldn't connect to server\n");
+        logger->error("Couldn't connect to server");
         return 1;
     }
 
@@ -96,14 +122,16 @@ int main(int, char* []) {
 
     // Set an initialize request to the server.
     auto future = session->send(dap::InitializeRequest{});
-    printf("Client sent initialize request to server\n");
-    printf("Waiting for response from server...\n");
+    logger->info("Client sent initialize request to server");
+    logger->info("Waiting for response from server...");
     // Wait on the response.
     auto response = future.get();
-    printf("Response received from server\n");
-    printf("Disconnecting...\n");
+    logger->_trace("main", "Response received from server");
+    logger->info("Disconnecting...");
     // Disconnect.
     session->send(dap::DisconnectRequest{});
+
+    logger->_endTrace("main");
 
     return 0;
 }

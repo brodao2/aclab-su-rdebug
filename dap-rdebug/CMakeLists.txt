@@ -12,7 +12,12 @@ endif()
 project ("dap-rdebug")
 
 # Adicione a origem ao executável deste projeto.
-add_executable (dap-rdebug "dap-rdebug.cpp" "dap-rdebug.h")
+add_executable (dap-rdebug 
+	"dap-rdebug.cpp" 
+	"dap-rdebug.h"
+	"logger.cpp"
+
+)
 
 set(CPPDAP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppdap) # example <path-to-cppdap>: "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppdap"
 add_subdirectory(${CPPDAP_DIR})
