@@ -19,10 +19,11 @@ add_executable (dap-rdebug
 	src/dap-rdebug.cpp
 	src/logger.cpp
 	src/config.cpp
-)
+ "third_party/argparse/argparse.h")
 
 target_include_directories(dap-rdebug 
-	PRIVATE include)
+	PRIVATE include
+)
 
 set(CPPDAP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppdap) 
 add_subdirectory(${CPPDAP_DIR})
@@ -30,8 +31,11 @@ add_subdirectory(${CPPDAP_DIR})
 set(SPDLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/spdlog) 
 add_subdirectory(${SPDLOG_DIR})
 
-set(CXXOPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cxxopts) 
-add_subdirectory(${CXXOPTS_DIR})
+set(ARGPARSE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/argparse) 
+#add_subdirectory(${ARGPARSE_DIR})
+target_include_directories(dap-rdebug 
+	PRIVATE ${ARGPARSE_DIR}
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET dap-rdebug PROPERTY CXX_STANDARD 20)
@@ -40,7 +44,8 @@ endif()
 target_link_libraries(
 	dap-rdebug 
 	cppdap 
-	spdlog::spdlog_header_only) 
+	spdlog::spdlog_header_only
+) 
 	
 # TODO: Adicione testes e instale destinos, se necessário.
 

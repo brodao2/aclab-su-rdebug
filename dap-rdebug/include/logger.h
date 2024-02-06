@@ -5,25 +5,6 @@
 #include <spdlog/stopwatch.h>
 #include <map>
 
-//#define stringify( name ) #name
-
-static const char* _enum_level_to_string[] = {
-	//stringify(spdlog::level::level_enum::trace),
-	//stringify(spdlog::level::level_enum::debug),
-	//stringify(spdlog::level::level_enum::info),
-	//stringify(spdlog::level::level_enum::warn),
-	//stringify(spdlog::level::level_enum::error),
-	//stringify(spdlog::level::level_enum::critical),
-	//stringify(spdlog::level::level_enum::off)
-	"trace",
-	"debug",
-	"info",
-	"warn",
-	"error",
-	"critical",
-	"off"
-};
-
 class Logger {
 private:
 	//std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console = nullptr;

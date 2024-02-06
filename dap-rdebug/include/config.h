@@ -39,4 +39,6 @@ public:
 	std::string getSketchupProgram();
 	std::vector<std::string> getSketchupArguments();
 
+	int getServerPort();
+
 };

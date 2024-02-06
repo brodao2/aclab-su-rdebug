@@ -58,3 +58,7 @@ std::string Config::getSketchupProgram() {
 std::vector<std::string> Config::getSketchupArguments() {
 	return this->sketchupArguments;
 }
+
+int Config::getServerPort() {
+	return this->getRemotePort() + 1;
+}

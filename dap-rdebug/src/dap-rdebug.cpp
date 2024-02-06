@@ -23,7 +23,7 @@
 #include "../include/dap/network.h"
 #include "../include/dap/protocol.h"
 #include "../include/dap/session.h"
-#include "third_party/cxxopts/include/cxxopts.hpp"
+#include "argparse.h"
 
 #include "utils.h"
 #include "logger.h"
@@ -32,116 +32,107 @@
 #define VERSION "0.0.1"
 #define APP_NAME "dap-rdebug"
 #define APP_DESCRIPTION "AC Lab DAP-RDebug protocol tunnel (https://github.com/brodao2/aclab-su-rdebug)"
-#define USAGE "usage: dap-rebug --help" << std::endl
+#define USAGE "usage: dap-rebug -h|--help" << std::endl
 
 int main(int argc, char* argv[], char* envp[]) {
-	cxxopts::Options options(APP_NAME,
-		std::string(APP_DESCRIPTION).append(" v. ").append(VERSION)
-	);
+	/*
+	* =============================================================================
+	* Command Line Interface (CLI)
+	* =============================================================================
+	*/
+	argparse::ArgumentParser program(APP_NAME, VERSION);
 
-	options.add_options()
-		("v,version", "Show the version")
-		("h,help", "Show the help")
-		("l,level", "Log level (critical|error|warn|info|debug|trace|OFF)", cxxopts::value<std::string>())
-		("log-to-file", "Filename to record log of the DA executable file.", cxxopts::value<std::string>());
+	program.add_description(APP_DESCRIPTION);
+	program.add_epilog("Thanks for using " + std::string(APP_NAME) + ". Contributions are welcome.");
 
-	options.add_options("Required")
-		("remote-port", "SketchUp Remote port", cxxopts::value<int>())
-		("extension-development-path", "Extension Development Path (root)", cxxopts::value<std::string>());
+	program.add_argument("--log-to-file")
+		.help("filename to record log of the DA executable file")
+		.default_value("");
 
-	options.add_options("Sketchup")
-		("sketchup-program", "Absolute path to a SketchUp executable file", cxxopts::value<std::string>())
-		("sketchup-arguments", "SketchUp program arguments (comma separated)", cxxopts::value<std::vector<std::string>>());
+	argparse::ArgumentParser::MutuallyExclusiveGroup& group = program.add_mutually_exclusive_group();
+	group.add_argument("-l", "--level")
+		.help("log level (critical|error|warn|info|debug|trace|OFF)")
+		.default_value("info");
+	group.add_argument("--verbose")
+		.help("increase output verbosity (equal --level=trace)")
+		.default_value(false)
+		.implicit_value(true);
 
-	//options.parse_positional({ "input_files" });
+	program.add_argument("--remote-port")
+		.help("sketchUp remote port")
+		.scan<'i', int>()
+		.required();
+	program.add_argument("-e", "--extension-development-path")
+		.help("extension development path (root)")
+		.required();
 
-	cxxopts::ParseResult result = options.parse(argc, argv);
-	//options.allow_unrecognised_options();
+	program.add_argument("--su", "--sketchup-program")
+		.help("absolute path to a SketchUp executable file")
+		.default_value("");
+	program.add_argument("--su-arg", "--sketchup-argument")
+		.help("sketchUp program arguments (one for each)")
+		.append()
+		.default_value<std::vector<std::string>>({ })
+		.nargs(0, 5);
 
 	try {
-		result = options.parse(argc, argv);
+		program.parse_args(argc, argv);
 	}
-	catch (const cxxopts::exceptions::specification& x) {
-		std::cerr << APP_NAME << ": " << x.what() << '\n';
-		std::cerr << USAGE;
-		return EXIT_FAILURE;
-	}
-
-	//auto remaining = result.unmatched();
-	//for (auto& el : remaining) {
-	//    std::cout << el << " ";
-	//}
-
-	const std::vector<std::string> unknowOptios = result.unmatched();
-	if (unknowOptios.size() > 0) {
-		std::cerr << APP_NAME << ": unknow options "
-			<< join(unknowOptios.begin(), unknowOptios.end(), ", ")
-			<< std::endl;
-		std::cerr << USAGE;
-
-		return EXIT_FAILURE;
+	catch (const std::exception& err) {
+		std::cerr << err.what() << std::endl;
+		std::cerr << program;
+		std::exit(1);
 	}
 
-	if (result.count("help"))
+	if (program.present<int>("--remote-port"))
 	{
-		std::cout << options.help() << std::endl;
-		return EXIT_SUCCESS;
-	}
-
-	if (result.count("version"))
-	{
-		std::cout << APP_NAME << " << " VERSION << std::endl;
-		return EXIT_SUCCESS;
-	}
-
-	if (result.count("remote-port") != 0)
-	{
-		//a porta do DA é port-remote + 1
-
-		if ((result["remote-port"].as<int>() < 1024) || (result["remote-port"].as<int>() > 65534)) //65535
+		//a porta do DA é remote-port + 1
+		int remotePort = program.get<int>("--remote-port");
+#ifdef LINUX
+		if ((remotePort < 1024) || (remotePort > 65534)) //65535
 		{
-			std::cerr << APP_NAME << ": remote-port option out of range 10124 and 65534" << std::endl;
+			std::cerr << APP_NAME << ": --remote-port out of range 10124 and 65534" << std::endl;
 			std::cerr << USAGE;
 
 			return EXIT_FAILURE;
 		}
+#else
+		if ((remotePort < 1) || (remotePort > 65534)) //65535
+		{
+			std::cerr << APP_NAME << ": --remote-port out of range 1 and 65534" << std::endl;
+			std::cerr << USAGE;
+
+			return EXIT_FAILURE;
+		}
+#endif
 	}
 
-	if (result.count("extension-development-path") == 0)
-	{
-		std::cerr << APP_NAME << ": extension-development-path option is required" << std::endl;
-		std::cerr << USAGE;
+	//auto suArgs = program.get<std::vector<std::string>>("--sketchup-arguments");
+	//if ((suArgs.size() > 0) && (!program.present("--sketchup-program")))
+	//{
+	//	std::cerr << APP_NAME << ": --sketchup-program is required for --sketchup-arguments" << std::endl;
+	//	std::cerr << USAGE;
 
-		return EXIT_FAILURE;
-	}
+	//	return EXIT_FAILURE;
+	//}
 
-	if ((result.count("sketchup-arguments") != 0) && (result.count("sketchup-program") == 0))
-	{
-		std::cerr << APP_NAME << ": sketchup-program option is required for sketchup-arguments" << std::endl;
-		std::cerr << USAGE;
-
-		return EXIT_FAILURE;
-	}
-
+	/*
+	* =============================================================================
+	* Global Configuration
+	* =============================================================================
+	*/
 	Config* config = Config::getInstance();
 
-	config->setExtension(result["extension-development-path"].as<std::string>());
-
-	if (result.count("level")) {
-		config->setLogLevel(spdlog::level::from_str(result["level"].as<std::string>()));
+	config->setExtension(program.get<std::string>("--extension-development-path"));
+	if (program.is_used("--verbose")) {
+		config->setLogLevel(spdlog::level::trace);
+	} else {
+		config->setLogLevel(spdlog::level::from_str(program.get<std::string>("--level")));
 	}
-	if (result.count("log-to-file")) {
-		config->setLogFile(result["log-to-file"].as<std::string>());
-	}
-	if (result.count("remote-port")) {
-		config->setRemotePort(result["remote-port"].as<int>());
-	}
-	if (result.count("sketchup-program")) {
-		config->setSketchupProgram(result["sketchup-program"].as<std::string>());
-	}
-	if (result.count("sketchup-arguments")) {
-		config->setSketchupArguments(result["sketchup-arguments"].as<std::vector<std::string>>());
-	}
+	config->setLogFile(program.get<std::string>("--log-to-file"));
+	config->setRemotePort(program.get<int>("--remote-port"));
+	config->setSketchupProgram(program.get<std::string>("--sketchup-program"));
+	//config->setSketchupArguments(program.get<std::vector<std::string>>("--sketchup-arguments"));
 
 	Logger* logger = Logger::getInstance();
 
@@ -174,8 +165,8 @@ int main(int argc, char* argv[], char* envp[]) {
 	);
 	logger->info(std::string(". Filename log  : ")
 		.append("(")
-		.append(config->getLogLevel() > 0 ? 
-			spdlog::level::to_string_view(static_cast<spdlog::level::level_enum>(config->getLogLevel()-1)).data()
+		.append(config->getLogLevel() > 0 ?
+			spdlog::level::to_string_view(static_cast<spdlog::level::level_enum>(config->getLogLevel() - 1)).data()
 			: spdlog::level::to_string_view(static_cast<spdlog::level::level_enum>(config->getLogLevel())).data()
 		)
 		.append(") ")
@@ -203,7 +194,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 	logger->startTrace("main");
 
-	const int kPort = config->getRemotePort() + 1;
+	const int kPort = config->getRemotePort();
 
 	// Callback handler for a socket connection to the server
 	auto onClientConnected =
