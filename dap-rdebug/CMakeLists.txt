@@ -19,7 +19,10 @@ add_executable (dap-rdebug
 	src/dap-rdebug.cpp
 	src/logger.cpp
 	src/config.cpp
- "third_party/argparse/argparse.h")
+	"third_party/argparse/argparse.h" 
+	"include/event.h" 
+	"src/event.cpp"
+)
 
 target_include_directories(dap-rdebug 
 	PRIVATE include
@@ -48,4 +51,3 @@ target_link_libraries(
 ) 
 	
 # TODO: Adicione testes e instale destinos, se necessário.
-

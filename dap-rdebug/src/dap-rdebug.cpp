@@ -18,6 +18,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <iostream>
+#include <thread>
 
 #include "../include/dap/io.h"
 #include "../include/dap/network.h"
@@ -28,6 +29,7 @@
 #include "utils.h"
 #include "logger.h"
 #include "config.h"
+#include <event.h>
 
 #define VERSION "0.0.1"
 #define APP_NAME "dap-rdebug"
@@ -126,7 +128,8 @@ int main(int argc, char* argv[], char* envp[]) {
 	config->setExtension(program.get<std::string>("--extension-development-path"));
 	if (program.is_used("--verbose")) {
 		config->setLogLevel(spdlog::level::trace);
-	} else {
+	}
+	else {
 		config->setLogLevel(spdlog::level::from_str(program.get<std::string>("--level")));
 	}
 	config->setLogFile(program.get<std::string>("--log-to-file"));
@@ -195,6 +198,11 @@ int main(int argc, char* argv[], char* envp[]) {
 	logger->startTrace("main");
 
 	const int kPort = config->getRemotePort();
+	// Signal used to terminate the server session when a DisconnectRequest
+	// is made by the client.
+	std::condition_variable cvApp;
+	std::mutex mutexApp;  // guards 'terminateApp'
+	bool terminateApp = false;
 
 	// Callback handler for a socket connection to the server
 	auto onClientConnected =
@@ -207,21 +215,21 @@ int main(int argc, char* argv[], char* envp[]) {
 
 		session->bind(socket);
 
+		// Signal used to terminate the server session when a DisconnectRequest
+		// is made by the client.
+		std::condition_variable cv;
+		std::mutex mutex;  // guards 'terminate'
+		bool terminate = false;
+
 		// The Initialize request is the first message sent from the client and
 		// the response reports debugger capabilities.
 		// https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
 		session->registerHandler([&](const dap::InitializeRequest&) {
+			logger->debug("Server received initialize request from client");
 			dap::InitializeResponse response;
-			logger->info("Server received initialize request from client");
 
 			return response;
 			});
-
-		// Signal used to terminate the server session when a DisconnectRequest
-		// is made by the client.
-		bool terminate = false;
-		std::condition_variable cv;
-		std::mutex mutex;  // guards 'terminate'
 
 		// The Disconnect request is made by the client before it disconnects
 		// from the server.
@@ -229,6 +237,8 @@ int main(int argc, char* argv[], char* envp[]) {
 		session->registerHandler([&](const dap::DisconnectRequest&) {
 			// Client wants to disconnect. Set terminate to true, and signal the
 			// condition variable to unblock the server thread.
+			logger->debug("Server received disconnect request from client");
+
 			std::unique_lock<std::mutex> lock(mutex);
 			terminate = true;
 			cv.notify_one();
@@ -239,14 +249,20 @@ int main(int argc, char* argv[], char* envp[]) {
 		// before releasing the session and disconnecting the socket to the
 		// client.
 		std::unique_lock<std::mutex> lock(mutex);
-		cv.wait_for(lock, std::chrono::seconds(5), [&] { return terminate; });
-		logger->info("Server closing connection");
-		logger->trace("main", "close");
+		while (!terminate) {
+			cv.wait_for(lock, std::chrono::seconds(5), [&] { return terminate; });
+			std::cout << "Waiting message " << terminate << std::endl;
+		}; 
+
+		logger->debug("Server terminate");
+		std::unique_lock<std::mutex> lockApp(mutexApp);
+		terminateApp = true;
 		};
 
 	// Error handler
-	auto onError = [&](const char* msg) {
-		logger->error("Server error: %s", msg);
+	auto onError = [&](const char* msg) { 
+		logger->error("Server error:");
+		logger->error(msg);
 		};
 
 	// Create the network server
@@ -254,32 +270,49 @@ int main(int argc, char* argv[], char* envp[]) {
 	// Start listening on kPort.
 	// onClientConnected will be called when a client wants to connect.
 	// onError will be called on any connection errors.
+	logger->info("Start server");
 	server->start(kPort, onClientConnected, onError);
 
-	// Create a socket to the server. This will be used for the client side of the
-	// connection.
-	auto client = dap::net::connect("localhost", kPort);
-	if (!client) {
-		logger->error("Couldn't connect to server");
-		return 1;
-	}
+	auto waitProcess = [&]() {
+		char c = 0;
+		std::cout << "Press ^C to cancel" << std::endl;
+		std::cin >> c;
+	};
 
-	// Attach a session to the client socket.
-	auto session = dap::Session::create();
-	session->bind(client);
+	std::thread t1(waitProcess);
 
-	// Set an initialize request to the server.
-	auto future = session->send(dap::InitializeRequest{});
-	logger->info("Client sent initialize request to server");
-	logger->info("Waiting for response from server...");
-	// Wait on the response.
-	auto response = future.get();
-	logger->trace("main", "Response received from server");
-	logger->info("Disconnecting...");
-	// Disconnect.
-	session->send(dap::DisconnectRequest{});
+	// Wait for t1 to finish
+	t1.join();
 
-	logger->endTrace("main");
+	logger->info("Server closing connection");
+	logger->trace("main", "close");
+
+	logger->info("Shutdown");
 
 	return 0;
 }
+
+//// Create a socket to the server. This will be used for the client side of the
+//// connection.
+//auto client = dap::net::connect("localhost", kPort);
+//if (!client) {
+//	logger->error("Couldn't connect to server");
+//	return 1;
+//}
+
+//// Attach a session to the client socket.
+//auto session = dap::Session::create();
+//session->bind(client);
+
+//// Set an initialize request to the server.
+//auto future = session->send(dap::InitializeRequest{});
+//logger->info("Client sent initialize request to server");
+//logger->info("Waiting for response from server...");
+//// Wait on the response.
+//auto response = future.get();
+//logger->trace("main", "Response received from server");
+//logger->info("Disconnecting...");
+//// Disconnect.
+//session->send(dap::DisconnectRequest{});
+
+//logger->endTrace("main");
