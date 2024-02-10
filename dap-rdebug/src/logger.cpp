@@ -120,7 +120,7 @@ void Logger::warn(std::string message, ...) {
 }
 
 void Logger::startTrace(std::string label) {
-	this->console->trace("[{}] start", label);
+	this->console->trace("[{}] start.", label);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->trace("[{}] start", label);
@@ -142,19 +142,18 @@ void Logger::trace(std::string label, std::string message, ...) {
 }
 
 void Logger::endTrace(std::string label) {
-	this->console->trace("[{}] end", label);
+	double elapsed = this->endChrono(label);
+	
+	this->console->trace("[{}] end. Elapsed {:.3} ms", label, elapsed);
 
 	if (this->fileLog != nullptr) {
-		this->fileLog->trace("[{}] end", label);
+		this->fileLog->trace("[{}] end. Elapsed {:.3} ms", label, elapsed);
 	}
 
-	this->endChrono(label);
 	//this->allLoggers->trace(message);
 }
 
 void Logger::startChrono(std::string label) {
-	this->debug("chrono start: " + label);
-
 	this->chronoMap.insert({ label, new spdlog::stopwatch() });
 }
 
@@ -162,20 +161,24 @@ void Logger::chrono(std::string label) {
 	if (this->chronoMap.contains(label)) {
 		spdlog::stopwatch* sw = this->chronoMap.at(label);
 
-		this->console->trace("[{0}] Partial {1:.3} ms", label.c_str(), sw->elapsed().count());
+		this->console->trace("[{0}] Partial {1:.3} ticks", label.c_str(), sw->elapsed().count());
 	}
 }
 
-void Logger::endChrono(std::string label) {
+double Logger::endChrono(std::string label) {
+	double result = -1;
+
 	if (this->chronoMap.contains(label)) {
 		spdlog::stopwatch* sw = this->chronoMap.at(label);
 		this->chronoMap.erase(label);
 
-		this->console->trace("[{0}] Elpased {1:.3} ms", label.c_str(), sw->elapsed().count());
+		result = sw->elapsed_ms().count();
 
 		delete sw;
 	}
 	else {
 		this->console->trace("chrono label not found: {0}", label);
 	}
+
+	return result;
 }

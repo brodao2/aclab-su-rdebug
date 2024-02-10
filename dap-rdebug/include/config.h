@@ -35,10 +35,9 @@ public:
 	spdlog::level::level_enum getLogLevel();
 	std::string getLogFile();
 	int getRemotePort();
+	int getDebugAdapterPort();
 	std::string getExtension();
 	std::string getSketchupProgram();
 	std::vector<std::string> getSketchupArguments();
-
-	int getServerPort();
 
 };

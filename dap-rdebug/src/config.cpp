@@ -43,8 +43,12 @@ std::string Config::getLogFile() {
 	return this->logFile;
 }
 
-int Config::getRemotePort() {
+int Config::_getRemotePort() {
 	return this->remotePort;
+}
+
+int Config::getDebugAdapterPort() {
+	return this->remotePort + 1;
 }
 
 std::string Config::getExtension() {
@@ -57,8 +61,4 @@ std::string Config::getSketchupProgram() {
 
 std::vector<std::string> Config::getSketchupArguments() {
 	return this->sketchupArguments;
-}
-
-int Config::getServerPort() {
-	return this->getRemotePort() + 1;
 }

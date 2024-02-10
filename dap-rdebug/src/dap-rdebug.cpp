@@ -30,6 +30,8 @@
 #include "logger.h"
 #include "config.h"
 #include <event.h>
+#include <msg-initialize-request.h>
+#include <msg-disconnect-request.h>
 
 #define VERSION "0.0.1"
 #define APP_NAME "dap-rdebug"
@@ -54,7 +56,11 @@ int main(int argc, char* argv[], char* envp[]) {
 	argparse::ArgumentParser::MutuallyExclusiveGroup& group = program.add_mutually_exclusive_group();
 	group.add_argument("-l", "--level")
 		.help("log level (critical|error|warn|info|debug|trace|OFF)")
+#ifndef DEBUG
+		.default_value("trace");
+#else
 		.default_value("info");
+#endif
 	group.add_argument("--verbose")
 		.help("increase output verbosity (equal --level=trace)")
 		.default_value(false)
@@ -63,10 +69,18 @@ int main(int argc, char* argv[], char* envp[]) {
 	program.add_argument("--remote-port")
 		.help("sketchUp remote port")
 		.scan<'i', int>()
+#ifndef DEBUG
+		.default_value(9000);
+#else
 		.required();
+#endif
 	program.add_argument("-e", "--extension-development-path")
 		.help("extension development path (root)")
+#ifndef DEBUG
+		.default_value("xxxxxxxxxxxxxx");
+#else
 		.required();
+#endif
 
 	program.add_argument("--su", "--sketchup-program")
 		.help("absolute path to a SketchUp executable file")
@@ -86,19 +100,10 @@ int main(int argc, char* argv[], char* envp[]) {
 		std::exit(1);
 	}
 
-	if (program.present<int>("--remote-port"))
+	if (program.is_used("--remote-port"))
 	{
 		//a porta do DA é remote-port + 1
 		int remotePort = program.get<int>("--remote-port");
-#ifdef LINUX
-		if ((remotePort < 1024) || (remotePort > 65534)) //65535
-		{
-			std::cerr << APP_NAME << ": --remote-port out of range 10124 and 65534" << std::endl;
-			std::cerr << USAGE;
-
-			return EXIT_FAILURE;
-		}
-#else
 		if ((remotePort < 1) || (remotePort > 65534)) //65535
 		{
 			std::cerr << APP_NAME << ": --remote-port out of range 1 and 65534" << std::endl;
@@ -106,7 +111,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
 			return EXIT_FAILURE;
 		}
-#endif
 	}
 
 	//auto suArgs = program.get<std::vector<std::string>>("--sketchup-arguments");
@@ -175,6 +179,8 @@ int main(int argc, char* argv[], char* envp[]) {
 		.append(") ")
 		.append(config->getLogFile())
 	);
+	logger->info(std::string(". DA port       : ")
+		.append(std::to_string(config->getDebugAdapterPort())));
 	logger->info(std::string(". Remote port   : ")
 		.append(std::to_string(config->getRemotePort())));
 	logger->info(std::string(". Extension path: ")
@@ -197,7 +203,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 	logger->startTrace("main");
 
-	const int kPort = config->getRemotePort();
+	const int kPort = config->getDebugAdapterPort();
 	// Signal used to terminate the server session when a DisconnectRequest
 	// is made by the client.
 	std::condition_variable cvApp;
@@ -224,34 +230,38 @@ int main(int argc, char* argv[], char* envp[]) {
 		// The Initialize request is the first message sent from the client and
 		// the response reports debugger capabilities.
 		// https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-		session->registerHandler([&](const dap::InitializeRequest&) {
-			logger->debug("Server received initialize request from client");
-			dap::InitializeResponse response;
+		session->registerHandler([&](const dap::InitializeRequest& message) {
+			logger->startTrace("initializeRequest");
+			dap::InitializeResponse response = MessageInitializeRequest::Run(message);
 
+			logger->endTrace("initializeRequest");
 			return response;
-			});
+		});
 
 		// The Disconnect request is made by the client before it disconnects
 		// from the server.
 		// https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Disconnect
-		session->registerHandler([&](const dap::DisconnectRequest&) {
+		session->registerHandler([&](const dap::DisconnectRequest& message) {
+			logger->startTrace("disconnectRequest");
 			// Client wants to disconnect. Set terminate to true, and signal the
 			// condition variable to unblock the server thread.
-			logger->debug("Server received disconnect request from client");
+			dap::DisconnectResponse response = MessageDisconnectRequest::Run(message);
 
 			std::unique_lock<std::mutex> lock(mutex);
 			terminate = true;
 			cv.notify_one();
-			return dap::DisconnectResponse{};
-			});
+
+			logger->endTrace("disconnectRequest");
+			return response;
+		});
 
 		// Wait for the client to disconnect (or reach a 5 second timeout)
 		// before releasing the session and disconnecting the socket to the
 		// client.
 		std::unique_lock<std::mutex> lock(mutex);
 		while (!terminate) {
-			cv.wait_for(lock, std::chrono::seconds(5), [&] { return terminate; });
-			std::cout << "Waiting message " << terminate << std::endl;
+			cv.wait_for(lock, std::chrono::seconds(3), [&] { return terminate; });
+			//std::cout << "Waiting message " << terminate << std::endl;
 		}; 
 
 		logger->debug("Server terminate");
@@ -274,9 +284,12 @@ int main(int argc, char* argv[], char* envp[]) {
 	server->start(kPort, onClientConnected, onError);
 
 	auto waitProcess = [&]() {
-		char c = 0;
-		std::cout << "Press ^C to cancel" << std::endl;
-		std::cin >> c;
+		std::unique_lock<std::mutex> lockApp(mutexApp);
+
+		while (!terminateApp) {
+			cvApp.wait_for(lockApp, std::chrono::seconds(5), [&] { return terminateApp; });
+			//std::cout << "App Waiting message " << terminateApp << std::endl;
+		}
 	};
 
 	std::thread t1(waitProcess);
@@ -284,8 +297,9 @@ int main(int argc, char* argv[], char* envp[]) {
 	// Wait for t1 to finish
 	t1.join();
 
-	logger->info("Server closing connection");
-	logger->trace("main", "close");
+	logger->info("Server stopping...");
+	server->stop();
+	logger->endTrace("main");
 
 	logger->info("Shutdown");
 

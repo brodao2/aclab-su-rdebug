@@ -21,7 +21,7 @@ private:
 protected:
 	void startChrono(std::string label);
 	void chrono(std::string label);
-	void endChrono(std::string label);
+	double endChrono(std::string label);
 
 public:
 	static Logger* getInstance()

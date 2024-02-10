@@ -15,14 +15,14 @@ project (dap-rdebug
 )
 
 # Adicione a origem ao executável deste projeto.
-add_executable (dap-rdebug 
-	src/dap-rdebug.cpp
+add_executable (dap-rdebug 	
+	"third_party/argparse/argparse.h" 
+	"src/event.cpp"
+	"src/dap-rdebug.cpp"
 	src/logger.cpp
 	src/config.cpp
-	"third_party/argparse/argparse.h" 
-	"include/event.h" 
-	"src/event.cpp"
-)
+	"src/msg-initialize-request.cpp"
+	"src/msg-disconnect-request.cpp")
 
 target_include_directories(dap-rdebug 
 	PRIVATE include
