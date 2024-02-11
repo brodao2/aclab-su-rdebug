@@ -19,6 +19,8 @@
 #include <mutex>
 #include <iostream>
 #include <thread>
+#include <io.h>
+#include <fcntl.h>
 
 #include "../include/dap/io.h"
 #include "../include/dap/network.h"
@@ -32,6 +34,7 @@
 #include <event.h>
 #include <msg-initialize-request.h>
 #include <msg-disconnect-request.h>
+#include <msg-breakpoints-locations-request.h>
 
 #define VERSION "0.0.1"
 #define APP_NAME "dap-rdebug"
@@ -210,16 +213,16 @@ int main(int argc, char* argv[], char* envp[]) {
 	std::mutex mutexApp;  // guards 'terminateApp'
 	bool terminateApp = false;
 
-	// Callback handler for a socket connection to the server
-	auto onClientConnected =
-		[&](const std::shared_ptr<dap::ReaderWriter>& socket) {
-		auto session = dap::Session::create();
+	// Change stdin & stdout from text mode to binary mode.
+	// This ensures sequences of \r\n are not changed to \n.
+	_setmode(_fileno(stdin), _O_BINARY);
+	_setmode(_fileno(stdout), _O_BINARY);
+
+	auto session = dap::Session::create();
 
 		// Set the session to close on invalid data. This ensures that data received over the network
 		// receives a baseline level of validation before being processed.
 		session->setOnInvalidData(dap::kClose);
-
-		session->bind(socket);
 
 		// Signal used to terminate the server session when a DisconnectRequest
 		// is made by the client.
@@ -235,8 +238,29 @@ int main(int argc, char* argv[], char* envp[]) {
 			dap::InitializeResponse response = MessageInitializeRequest::Run(message);
 
 			logger->endTrace("initializeRequest");
+
 			return response;
 		});
+
+		session->registerHandler([&](const dap::AttachRequest& message) {
+			logger->startTrace("attachRequest");
+			dap::AttachResponse response;// = MessageInitializeRequest::Run(message);
+
+			logger->endTrace("attachRequest");
+
+
+			return response;
+			});
+
+		session->registerHandler([&](const dap::BreakpointLocationsRequest& message) {
+			logger->startTrace("breakpointLocationsRequest");
+			dap::BreakpointLocationsResponse response = MessageBreakpointLocationsRequest::Run(message);
+			
+			logger->endTrace("breakpointLocationsRequest");
+
+
+			return response;
+			});
 
 		// The Disconnect request is made by the client before it disconnects
 		// from the server.
@@ -255,20 +279,6 @@ int main(int argc, char* argv[], char* envp[]) {
 			return response;
 		});
 
-		// Wait for the client to disconnect (or reach a 5 second timeout)
-		// before releasing the session and disconnecting the socket to the
-		// client.
-		std::unique_lock<std::mutex> lock(mutex);
-		while (!terminate) {
-			cv.wait_for(lock, std::chrono::seconds(3), [&] { return terminate; });
-			//std::cout << "Waiting message " << terminate << std::endl;
-		}; 
-
-		logger->debug("Server terminate");
-		std::unique_lock<std::mutex> lockApp(mutexApp);
-		terminateApp = true;
-		};
-
 	// Error handler
 	auto onError = [&](const char* msg) { 
 		logger->error("Server error:");
@@ -276,13 +286,20 @@ int main(int argc, char* argv[], char* envp[]) {
 		};
 
 	// Create the network server
-	auto server = dap::net::Server::create();
-	// Start listening on kPort.
-	// onClientConnected will be called when a client wants to connect.
-	// onError will be called on any connection errors.
-	logger->info("Start server");
-	server->start(kPort, onClientConnected, onError);
+	std::shared_ptr<dap::Reader> in = dap::file(stdin, false);
+	std::shared_ptr<dap::Writer> out = dap::file(stdout, false);
+	session->bind(in, out);
 
+	// Wait for the client to disconnect (or reach a 5 second timeout)
+	// before releasing the session and disconnecting the socket to the
+	// client.
+	std::unique_lock<std::mutex> lock(mutex);
+	while (!terminate) {
+		cv.wait_for(lock, std::chrono::seconds(3), [&] { return terminate; });
+		//std::cout << "Waiting message " << terminate << std::endl;
+	};
+
+	//session->startProcessingMessages
 	auto waitProcess = [&]() {
 		std::unique_lock<std::mutex> lockApp(mutexApp);
 
@@ -298,7 +315,6 @@ int main(int argc, char* argv[], char* envp[]) {
 	t1.join();
 
 	logger->info("Server stopping...");
-	server->stop();
 	logger->endTrace("main");
 
 	logger->info("Shutdown");
