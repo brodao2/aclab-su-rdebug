@@ -49,41 +49,16 @@ export class SuDebugConfigurationProvider implements DebugConfigurationProvider 
       );
     }
 
-    // let setDapArgsArr: string[] = [];
-    // if (config.logFile) {
-    //   const ws: string = vscode.workspace.rootPath || "";
-    //   setDapArgsArr.push(
-    //     "--log-file=" + config.logFile.replace("${workspaceFolder}", ws)
-    //   );
-    // }
-    // if (config.waitForAttach) {
-    //   setDapArgsArr.push("--wait-for-attach=" + config.waitForAttach);
-    // }
-
-    // if (config.forceUtf8) {
-    //   vscode.window.showInformationMessage(vscode.l10n.t("--forceUtf8 deprecated. Setting will be ignored."))
-    //   //setDapArgsArr.push("--forceUtf8");
-    // }
-
-    // if (config.language) {
-    //   if (config.language === "1") config.language = "por";
-    //   else if (config.language === "2") config.language = "spa";
-    //   else if (config.language === "3") config.language = "eng";
-    //   else if (config.language === "4") config.language = "rus";
-    //   setDapArgsArr.push("--language=" + config.language);
-    // }
-
-    // setDapArgs(setDapArgsArr);
-
     return Promise.resolve(config);
   }
 
   protected initialize(config: DebugConfiguration) {
-    config.type = SuDebugConfigurationProvider.TYPE;
-    config.name = "._NAME";
+  //   config.type = SuDebugConfigurationProvider.TYPE;
+  //   config.name = "._NAME"; 
   }
 
   protected finalize(config: DebugConfiguration) {
+    
     return config;
   }
 

@@ -27,14 +27,6 @@ void Config::setExtension(std::string extensionPath) {
 	this->extension = extensionPath;
 }
 
-void Config::setSketchupProgram(std::string executablePath) {
-	this->sketchupProgram = executablePath;
-}
-
-void Config::setSketchupArguments(std::vector<std::string> arguments) {
-	this->sketchupArguments = arguments;
-}
-
 spdlog::level::level_enum Config::getLogLevel() {
 	return this->logLevel;
 }
@@ -53,12 +45,4 @@ int Config::getDebugAdapterPort() {
 
 std::string Config::getExtension() {
 	return this->extension;
-}
-
-std::string Config::getSketchupProgram() {
-	return this->sketchupProgram;
-}
-
-std::vector<std::string> Config::getSketchupArguments() {
-	return this->sketchupArguments;
 }

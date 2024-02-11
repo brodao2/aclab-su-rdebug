@@ -14,8 +14,6 @@ private:
 	std::string logFile = "";
 	int remotePort = 1234; //RDebug default port
 	std::string extension = "";
-	std::string sketchupProgram = "";
-	std::vector<std::string> sketchupArguments = {};
 
 public:
 	static Config* getInstance()
@@ -29,15 +27,10 @@ public:
 	void setLogFile(std::string filename);
 	void setRemotePort(int port);
 	void setExtension(std::string extensionPath);
-	void setSketchupProgram(std::string executablePath);
-	void setSketchupArguments(std::vector<std::string> arguments);
 
 	spdlog::level::level_enum getLogLevel();
 	std::string getLogFile();
 	int getRemotePort();
 	int getDebugAdapterPort();
 	std::string getExtension();
-	std::string getSketchupProgram();
-	std::vector<std::string> getSketchupArguments();
-
 };

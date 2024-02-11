@@ -19,8 +19,6 @@
 #include <mutex>
 #include <iostream>
 #include <thread>
-#include <io.h>
-#include <fcntl.h>
 
 #include "../include/dap/io.h"
 #include "../include/dap/network.h"
@@ -34,15 +32,11 @@
 #include <event.h>
 #include <msg-initialize-request.h>
 #include <msg-disconnect-request.h>
-#include <msg-breakpoints-locations-request.h>
-#include <rdebug-client.h>
 
 #define VERSION "0.0.1"
 #define APP_NAME "dap-rdebug"
 #define APP_DESCRIPTION "AC Lab DAP-RDebug protocol tunnel (https://github.com/brodao2/aclab-su-rdebug)"
 #define USAGE "usage: dap-rebug -h|--help" << std::endl
-
-RDebugClient* client = nullptr;
 
 int main(int argc, char* argv[], char* envp[]) {
 	/*
@@ -88,6 +82,15 @@ int main(int argc, char* argv[], char* envp[]) {
 		.required();
 #endif
 
+	program.add_argument("--su", "--sketchup-program")
+		.help("absolute path to a SketchUp executable file")
+		.default_value("");
+	program.add_argument("--su-arg", "--sketchup-argument")
+		.help("sketchUp program arguments (one for each)")
+		.append()
+		.default_value<std::vector<std::string>>({ })
+		.nargs(0, 5);
+
 	try {
 		program.parse_args(argc, argv);
 	}
@@ -110,6 +113,15 @@ int main(int argc, char* argv[], char* envp[]) {
 		}
 	}
 
+	//auto suArgs = program.get<std::vector<std::string>>("--sketchup-arguments");
+	//if ((suArgs.size() > 0) && (!program.present("--sketchup-program")))
+	//{
+	//	std::cerr << APP_NAME << ": --sketchup-program is required for --sketchup-arguments" << std::endl;
+	//	std::cerr << USAGE;
+
+	//	return EXIT_FAILURE;
+	//}
+
 	/*
 	* =============================================================================
 	* Global Configuration
@@ -126,6 +138,8 @@ int main(int argc, char* argv[], char* envp[]) {
 	}
 	config->setLogFile(program.get<std::string>("--log-to-file"));
 	config->setRemotePort(program.get<int>("--remote-port"));
+	config->setSketchupProgram(program.get<std::string>("--sketchup-program"));
+	//config->setSketchupArguments(program.get<std::vector<std::string>>("--sketchup-arguments"));
 
 	Logger* logger = Logger::getInstance();
 
@@ -171,6 +185,20 @@ int main(int argc, char* argv[], char* envp[]) {
 		.append(std::to_string(config->getRemotePort())));
 	logger->info(std::string(". Extension path: ")
 		.append(config->getExtension()));
+	logger->info(std::string(". Sketchup path : ")
+		.append(config->getSketchupProgram()));
+	std::vector<std::string> sketchupArguments = config->getSketchupArguments();
+	logger->info(std::string(". Sketchup arguments: ")
+		.append(std::to_string(sketchupArguments.size())));
+	for (size_t i = 0; i < sketchupArguments.size(); i++)
+	{
+		logger->info(
+			std::string("  . [")
+			.append(std::to_string(i))
+			.append("] : ")
+			.append(std::string(sketchupArguments[i]))
+		);
+	}
 	logger->info("-------------------------------------------------");
 
 	logger->startTrace("main");
@@ -182,16 +210,16 @@ int main(int argc, char* argv[], char* envp[]) {
 	std::mutex mutexApp;  // guards 'terminateApp'
 	bool terminateApp = false;
 
-	// Change stdin & stdout from text mode to binary mode.
-	// This ensures sequences of \r\n are not changed to \n.
-	_setmode(_fileno(stdin), _O_BINARY);
-	_setmode(_fileno(stdout), _O_BINARY);
-
-	auto session = dap::Session::create();
+	// Callback handler for a socket connection to the server
+	auto onClientConnected =
+		[&](const std::shared_ptr<dap::ReaderWriter>& socket) {
+		auto session = dap::Session::create();
 
 		// Set the session to close on invalid data. This ensures that data received over the network
 		// receives a baseline level of validation before being processed.
 		session->setOnInvalidData(dap::kClose);
+
+		session->bind(socket);
 
 		// Signal used to terminate the server session when a DisconnectRequest
 		// is made by the client.
@@ -207,43 +235,8 @@ int main(int argc, char* argv[], char* envp[]) {
 			dap::InitializeResponse response = MessageInitializeRequest::Run(message);
 
 			logger->endTrace("initializeRequest");
-
 			return response;
 		});
-
-		session->registerHandler([&](const dap::AttachRequest& message) {
-			logger->startTrace("attachRequest");
-			dap::AttachResponse response;// = MessageInitializeRequest::Run(message);
-
-			client = new RDebugClient();
-			if (!client->connect(config->getRemotePort())) {
-				dap::ErrorResponse error;
-				dap::Message message;
-				dap::object variables;
-
-				variables.insert({ "port", std::to_string(config->getRemotePort()) });
-			
-				message.format = "Connection to SU was not possible. RemotePor: {port}";
-				message.showUser = true;
-				message.variables = variables;
-				
-				error.error = message;
-				
-				//return error;
-			}
-
-			logger->endTrace("attachRequest");
-			return response;
-			});
-
-		session->registerHandler([&](const dap::BreakpointLocationsRequest& message) {
-			logger->startTrace("breakpointLocationsRequest");
-			dap::BreakpointLocationsResponse response = MessageBreakpointLocationsRequest::Run(message);
-			
-			logger->endTrace("breakpointLocationsRequest");
-
-			return response;
-			});
 
 		// The Disconnect request is made by the client before it disconnects
 		// from the server.
@@ -254,11 +247,6 @@ int main(int argc, char* argv[], char* envp[]) {
 			// condition variable to unblock the server thread.
 			dap::DisconnectResponse response = MessageDisconnectRequest::Run(message);
 
-			if (client) {
-				delete client;
-				client = nullptr;
-			}
-
 			std::unique_lock<std::mutex> lock(mutex);
 			terminate = true;
 			cv.notify_one();
@@ -267,6 +255,20 @@ int main(int argc, char* argv[], char* envp[]) {
 			return response;
 		});
 
+		// Wait for the client to disconnect (or reach a 5 second timeout)
+		// before releasing the session and disconnecting the socket to the
+		// client.
+		std::unique_lock<std::mutex> lock(mutex);
+		while (!terminate) {
+			cv.wait_for(lock, std::chrono::seconds(3), [&] { return terminate; });
+			//std::cout << "Waiting message " << terminate << std::endl;
+		}; 
+
+		logger->debug("Server terminate");
+		std::unique_lock<std::mutex> lockApp(mutexApp);
+		terminateApp = true;
+		};
+
 	// Error handler
 	auto onError = [&](const char* msg) { 
 		logger->error("Server error:");
@@ -274,20 +276,13 @@ int main(int argc, char* argv[], char* envp[]) {
 		};
 
 	// Create the network server
-	std::shared_ptr<dap::Reader> in = dap::file(stdin, false);
-	std::shared_ptr<dap::Writer> out = dap::file(stdout, false);
-	session->bind(in, out);
+	auto server = dap::net::Server::create();
+	// Start listening on kPort.
+	// onClientConnected will be called when a client wants to connect.
+	// onError will be called on any connection errors.
+	logger->info("Start server");
+	server->start(kPort, onClientConnected, onError);
 
-	// Wait for the client to disconnect (or reach a 5 second timeout)
-	// before releasing the session and disconnecting the socket to the
-	// client.
-	std::unique_lock<std::mutex> lock(mutex);
-	while (!terminate) {
-		cv.wait_for(lock, std::chrono::seconds(3), [&] { return terminate; });
-		//std::cout << "Waiting message " << terminate << std::endl;
-	};
-
-	//session->startProcessingMessages
 	auto waitProcess = [&]() {
 		std::unique_lock<std::mutex> lockApp(mutexApp);
 
@@ -303,6 +298,7 @@ int main(int argc, char* argv[], char* envp[]) {
 	t1.join();
 
 	logger->info("Server stopping...");
+	server->stop();
 	logger->endTrace("main");
 
 	logger->info("Shutdown");

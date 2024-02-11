@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
-//{ DebugAdapterDescriptorFactory, DebugSession, DebugAdapterExecutable, ProviderResult, DebugAdapterDescriptor, extensions } from 'vscode';
 import * as path from "path";
 import { SuDebugConfiguration } from "./debugConfigs";
+import { SketchUpProcess } from "./sketchUpProcess";
 
 export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-
 	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
 		// use the executable specified in the package.json if it exists 
 		// or determine it based on some other information(e.g.the session)
@@ -59,19 +58,6 @@ export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescr
 
 		if (suConfiguration.logToFile) {
 			args.push(`--log-to-file=${path.join(suConfiguration.extensionDevelopmentPath, suConfiguration.logToFile)}`);
-		}
-
-		if (suConfiguration.type === "launch") {
-			args.push(`--sketchup-program=${suConfiguration.sketchUpArguments}`);
-			const encode = (str: string): string => Buffer.from(str, 'binary').toString('base64');
-
-			let buffer: string[] = [];
-			suConfiguration.sketchUpArguments.forEach((sketchUpArgument: string, index: number) => {
-				//elimina necessidade de tratar aspas, caracteres acentuados e outros
-				buffer.push(encode(sketchUpArgument));
-			});
-
-			args.push(`--sketchup-argument=${buffer}`);
 		}
 
 		return { command: pathDAP, args: args };

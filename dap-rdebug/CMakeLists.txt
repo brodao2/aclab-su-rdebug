@@ -30,16 +30,19 @@ add_executable (dap-rdebug
 	"include/msg-abstract-request.h"
 	"include/msg-breakpoints-locations-request.h"
 	"include/msg-disconnect-request.h"
+	"include/msg-initialize-request.h"   
+	"include/rdebug-client.h"
 	
 	"src/event.cpp"
 	"src/dap-rdebug.cpp"
 	"src/logger.cpp"
 	"src/config.cpp"
-	"src/msg-abstract-request.cpp"
+	"src/rdebug-client.cpp"
+	"src/msg-attach-request.cpp"
 	"src/msg-initialize-request.cpp"
 	"src/msg-disconnect-request.cpp"
-	
- "include/msg-initialize-request.h"   "src/msg-breakpoints-locations-request.cpp")
+	"src/msg-breakpoints-locations-request.cpp" 
+)
 
 target_include_directories(dap-rdebug 
 	PRIVATE include
