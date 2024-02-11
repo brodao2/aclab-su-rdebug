@@ -8,6 +8,11 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
+if (LINUX)
+	set( CMAKE_CXX_COMPILER "/pathto/g++" )
+	set( CMAKE_C_COMPILER "/pathto/gcc" )
+endif()
+
 project (dap-rdebug 
 	VERSION 0.0.1 
 	DESCRIPTION "AC Lab DAP-RDebug protocol tunnel"
@@ -15,14 +20,26 @@ project (dap-rdebug
 )
 
 # Adicione a origem ao executável deste projeto.
+
 add_executable (dap-rdebug 	
 	"third_party/argparse/argparse.h" 
+	"include/event.h"
+	"include/dap-rdebug.h"
+	"include/logger.h"
+	"include/config.h"
+	"include/msg-abstract-request.h"
+	"include/msg-breakpoints-locations-request.h"
+	"include/msg-disconnect-request.h"
+	
 	"src/event.cpp"
 	"src/dap-rdebug.cpp"
-	src/logger.cpp
-	src/config.cpp
+	"src/logger.cpp"
+	"src/config.cpp"
+	"src/msg-abstract-request.cpp"
 	"src/msg-initialize-request.cpp"
-	"src/msg-disconnect-request.cpp")
+	"src/msg-disconnect-request.cpp"
+	
+ "include/msg-initialize-request.h"   "src/msg-breakpoints-locations-request.cpp")
 
 target_include_directories(dap-rdebug 
 	PRIVATE include

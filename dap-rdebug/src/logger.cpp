@@ -22,6 +22,7 @@ Logger::Logger() {
 
 	//this->console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>("console");
 	this->console = spdlog::stdout_color_mt("console");
+	this->console->set_level(spdlog::level::off);
 
 	if (config->getLogFile() != "") {
 		//this->fileLog = std::make_shared<spdlog::sinks::basic_file_sink_mt>("file", filename, true);

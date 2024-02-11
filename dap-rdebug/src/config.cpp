@@ -43,7 +43,7 @@ std::string Config::getLogFile() {
 	return this->logFile;
 }
 
-int Config::_getRemotePort() {
+int Config::getRemotePort() {
 	return this->remotePort;
 }
 

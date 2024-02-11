@@ -1,4 +1,6 @@
-#include <dap/protocol.h>
+#pragma once
+
+#include "msg-abstract-request.h"
 
 class MessageInitializeRequest {
 public:
