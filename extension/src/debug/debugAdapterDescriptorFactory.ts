@@ -1,23 +1,26 @@
-import path from 'path';
-import { DebugAdapterDescriptor, DebugAdapterDescriptorFactory, DebugAdapterExecutable, DebugConfiguration, DebugSession, ProviderResult, extensions } from 'vscode';
-import { SuDebugConfiguration } from './debugConfigurationInterface';
+import * as vscode from "vscode";
+//{ DebugAdapterDescriptorFactory, DebugSession, DebugAdapterExecutable, ProviderResult, DebugAdapterDescriptor, extensions } from 'vscode';
+import * as path from "path";
+import { SuDebugConfiguration } from "./debugConfigs";
 
-export class SuAdapterDescriptorFactory implements DebugAdapterDescriptorFactory {
+export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
 
-	createDebugAdapterDescriptor(session: DebugSession, executable: DebugAdapterExecutable | undefined): ProviderResult<DebugAdapterDescriptor> {
+	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+		// use the executable specified in the package.json if it exists 
+		// or determine it based on some other information(e.g.the session)
 		if (!executable) {
-			let dap: { command: string, args: string[] } = this.getDAP(session.configuration);
-			executable = new DebugAdapterExecutable(dap.command, dap.args);
+			let dap = this.getDAP(session.configuration);
+			executable = new vscode.DebugAdapterExecutable(dap.command, dap.args);
 		}
-
+		// make VS Code launch the DA executable
 		return executable;
 	}
 
-	private getDAP(configuration: DebugConfiguration): { command: string, args: string[] } {
+	private getDAP(configuration: vscode.DebugConfiguration): { command: string, args: string[] } {
 		let pathDAP: string = "";
 		let args: string[] = [];
 
-		let ext = extensions.getExtension("brodao-lab.aclab-su-rdebug");
+		let ext = vscode.extensions.getExtension("brodao-lab.aclab-su-rdebug");
 		if (!ext) {
 			throw new Error("Extension [brodao-lab.aclab-su-rdebug] not initialize.");
 		}
@@ -25,12 +28,12 @@ export class SuAdapterDescriptorFactory implements DebugAdapterDescriptorFactory
 		if (process.platform === "win32") {
 			pathDAP = path.join(
 				ext.extensionPath,
-				"/node_modules/brodao-lab/bin/windows/dap-rdebug.exe"
+				"/bin/windows/dap-rdebug.exe"
 			);
 		} else if (process.platform === "linux") {
 			pathDAP = path.join(
 				ext.extensionPath,
-				"/node_modules/brodao-lab/bin/linux/dap-rdebug"
+				"/bin/linux/dap-rdebug"
 			);
 			// if (statSync(pathDAP).mode !== 33261) {
 			// 	chmodSync(pathDAP, "755");
@@ -38,7 +41,7 @@ export class SuAdapterDescriptorFactory implements DebugAdapterDescriptorFactory
 		} else if (process.platform === "darwin") {
 			pathDAP = path.join(
 				ext.extensionPath,
-				"/node_modules/brodao-lab.bin/mac/dap-rdebug"
+				".bin/mac/dap-rdebug"
 			);
 			// if (statSync(pathDAP).mode !== 33261) {
 			// 	chmodSync(pathDAP, "755");
@@ -47,15 +50,19 @@ export class SuAdapterDescriptorFactory implements DebugAdapterDescriptorFactory
 
 		const suConfiguration: SuDebugConfiguration = configuration as SuDebugConfiguration;
 
-		args.push(`--port=${suConfiguration.remotePort}`);
-		args.push(`--extensionDevelopmentPath=${suConfiguration.extensionDevelopmentPath}`);
+		args.push(`--remote-port=${suConfiguration.remotePort}`);
+		args.push(`--extension-development-path=${suConfiguration.extensionDevelopmentPath}`);
+
+		if (suConfiguration.level) {
+			args.push(`--level=${path.join(suConfiguration.extensionDevelopmentPath, suConfiguration.logToFile)}`);
+		}
 
 		if (suConfiguration.logToFile) {
-			args.push(`--logToFile=${path.join(suConfiguration.extensionDevelopmentPath, suConfiguration.logToFile)}`);
+			args.push(`--log-to-file=${path.join(suConfiguration.extensionDevelopmentPath, suConfiguration.logToFile)}`);
 		}
 
 		if (suConfiguration.type === "launch") {
-			args.push(`--sketchUpProgram=${suConfiguration.sketchUpArguments}`);
+			args.push(`--sketchup-program=${suConfiguration.sketchUpArguments}`);
 			const encode = (str: string): string => Buffer.from(str, 'binary').toString('base64');
 
 			let buffer: string[] = [];
@@ -64,7 +71,7 @@ export class SuAdapterDescriptorFactory implements DebugAdapterDescriptorFactory
 				buffer.push(encode(sketchUpArgument));
 			});
 
-			args.push(`--sketchUpArgument=${buffer}`);
+			args.push(`--sketchup-argument=${buffer}`);
 		}
 
 		return { command: pathDAP, args: args };

@@ -11,9 +11,25 @@
 			"presentation": {
 				"reveal": "always"
 			},
-			"group": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"label": "npm: compile",
 			"detail": "tsc -p ./"
 		},
+		{
+			"type": "npm",
+			"script": "upd-bin",
+			"isBackground": false,
+			"presentation": {
+				"reveal": "always"
+			},
+			"group": {
+				"kind": "build",
+			},
+			"label": "npm: upd-build",
+			"detail": "copy ...."
+		}
 	]
 }

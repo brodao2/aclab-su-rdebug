@@ -27,7 +27,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "-- UPD BIN --": "",
-    "upd-bin": "cmd /c copy ..\\dap-rdebug\\out\\build\\x64-debug\\dap-rdebug.??? .\\bin",
+    "upd-bin": "cmd /c copy ..\\dap-rdebug\\out\\build\\x64-debug\\dap-rdebug.??? .\\bin\\windows",
     "-- TEST --": "",
     "test": "vscode-test",
     "pretest": "npm run compile && npm run lint",
@@ -46,12 +46,12 @@
     "contributors:check": "all-contributors check"
   },
   "dependencies": {
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "^1.86.0",
     "@vscode/debugadapter": "^1.64.0",
     "@vscode/debugadapter-testsupport": "^1.64.0",
     "@vscode/debugprotocol": "^1.64.0",
     "@vscode/test-electron": "^2.3.9",
-    "@vscode/vsce": "^2.22.0",
+    "@vscode/vsce": "^2.23.0",
     "all-contributors-cli": "^6.26.1",
     "await-notify": "^1.0.1",
     "vscode-debugadapter-testsupport": "1.51.0"
@@ -78,8 +78,6 @@
           "ruby"
         ],
         "label": "Attach to SketchUp",
-        "program": "./out/debugAdapter.js",
-        "runtime": "node",
         "configurationAttributes": {
           "launch": {
             "required": [

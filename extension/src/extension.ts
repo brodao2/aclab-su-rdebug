@@ -1,15 +1,22 @@
 import * as vscode from 'vscode';
-import { SuConfigurationProvider } from "./debug/SuConfigurationProvider";
-import { SuAdapterDescriptorFactory } from "./debug/debugAdapterDescriptorFactory";
-import { SuDebugAdapterTrackerFactory } from './debug/debugTrackerFactory';
+import { SuDebugConfigurationProvider } from './debug/configurationProvider';
+import { SuDebugAdapterDescriptorFactory } from './debug/debugAdapterDescriptorFactory';
+import { SuDebugAdapterTrackerFactory } from './debug/debugTrackerDescriptorFactory';
 
 //import { registerInspectorView } from "./inspector";
 
 //const asyncExec = promisify(child_process.exec);
 
 let outputChannel: vscode.OutputChannel;
-export function pp(obj: any) {
-	outputChannel.appendLine(JSON.stringify(obj));
+
+export function pp(obj: any, obj1?: any) {
+	let text: string = JSON.stringify(obj);
+
+	if (obj1) {
+		text += "\n" + JSON.stringify(obj1) + "\n";
+	}
+
+	outputChannel.appendLine(text);
 }
 
 
@@ -68,8 +75,8 @@ export function activate(context: vscode.ExtensionContext) {
 	outputChannel = vscode.window.createOutputChannel("su-debug");
 
 	context.subscriptions.push(
-		vscode.debug.registerDebugConfigurationProvider(SU_TYPE_DEBUG, new SuConfigurationProvider()),
-		vscode.debug.registerDebugAdapterDescriptorFactory(SU_TYPE_DEBUG, new SuAdapterDescriptorFactory()),
+		vscode.debug.registerDebugConfigurationProvider(SU_TYPE_DEBUG, new SuDebugConfigurationProvider()),
+		vscode.debug.registerDebugAdapterDescriptorFactory(SU_TYPE_DEBUG, new SuDebugAdapterDescriptorFactory()),
 		vscode.debug.registerDebugAdapterTrackerFactory(SU_TYPE_DEBUG, new SuDebugAdapterTrackerFactory())
 	);
 
