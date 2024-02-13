@@ -35,6 +35,14 @@ export class SketchUpProcess {
             this.outputChannel.appendLine(`stderr:\n${data}`);
         });
 
+        this.spawn.stderr.on("exit", (code: any) => {
+            if (code !== 0) {
+                vscode.window.showErrorMessage(`Couldn't start debug session. The debugger process exited with code ${code}`);
+            }
+
+            return true;
+        });
+
         return true;
     }
 

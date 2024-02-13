@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { SuDebugConfigurationProvider } from './debug/configurationProvider';
 import { SuDebugAdapterDescriptorFactory } from './debug/debugAdapterDescriptorFactory';
 import { SuDebugAdapterTrackerFactory } from './debug/debugTrackerDescriptorFactory';
+import * as path from 'path';
 
 //import { registerInspectorView } from "./inspector";
 
@@ -118,7 +119,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.debug.onDidTerminateDebugSession(() => {
+		vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
 			console.log("onDidTerminateDebugSession");
 		})
 	);
@@ -127,6 +128,17 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.debug.onDidChangeActiveDebugSession(
 			(debugEvent: vscode.DebugSession | undefined) => {
 				console.log("onDidChangeActiveDebugSession");
+			}
+		)
+	);
+
+	context.subscriptions.push(
+		vscode.debug.onDidChangeBreakpoints(
+			(event: vscode.BreakpointsChangeEvent) => {
+				//vscode.debug.activeDebugSession?.customRequest("break");
+
+				console.log("onDidChangeBreakpoints");
+
 			}
 		)
 	);

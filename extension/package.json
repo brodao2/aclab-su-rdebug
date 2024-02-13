@@ -19,12 +19,9 @@
   "categories": [
     "Debuggers"
   ],
-  "activationEvents": [
-    "onDebug"
-  ],
   "main": "./out/extension.js",
   "scripts": {
-    "compile": "tsc -p ./",
+    "compile": "npm run upd-bin & tsc -p ./",
     "watch": "tsc -watch -p ./",
     "-- UPD BIN --": "",
     "upd-bin": "cmd /c copy ..\\dap-rdebug\\out\\build\\x64-debug\\dap-rdebug.??? .\\bin\\windows",
@@ -65,6 +62,10 @@
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
   },
+  "activationEvents": [
+    "onLanguage:ruby",
+    "onDebug"
+  ],
   "contributes": {
     "breakpoints": [
       {

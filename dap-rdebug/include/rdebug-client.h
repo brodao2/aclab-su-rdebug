@@ -23,5 +23,9 @@ public:
 
 	bool start();
 	bool finish();
+	bool send(std::string command);
+	std::string sendAndWait(std::string command);
 
+	bool addBreakpoint(std::string source, int line);
+	bool removeBreakpoint(std::string source, int line);
 };

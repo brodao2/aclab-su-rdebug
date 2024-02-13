@@ -12,7 +12,7 @@ private:
 	//std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileLog = nullptr;
 	//spdlog::logger* allLoggers = nullptr;
 	
-	std::shared_ptr<spdlog::logger> _console = nullptr;
+	std::shared_ptr<spdlog::logger> console = nullptr;
 	std::shared_ptr<spdlog::logger> fileLog = nullptr;
 	std::map<std::string, spdlog::stopwatch*> chronoMap;
 

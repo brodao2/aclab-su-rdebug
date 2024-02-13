@@ -228,9 +228,12 @@ int main(int argc, char* argv[], char* envp[]) {
 			client = RDebugClient::createRDebugClient(config->getRemotePort());
 			if (client == nullptr) {
 				logger->error("Connection to RDebug port failure.");
+				exit(10);
+			}
+			else {
+				client->start();
 			}
 
-			client->start();
 
 			logger->endTrace("attachRequest");
 			return response;
@@ -243,6 +246,7 @@ int main(int argc, char* argv[], char* envp[]) {
 			client = RDebugClient::createRDebugClient(config->getRemotePort());
 			if (client == nullptr) {
 				logger->error("Connection to RDebug port failure.");
+				exit(11);
 			}
 
 			client->start();
@@ -254,6 +258,8 @@ int main(int argc, char* argv[], char* envp[]) {
 		session->registerHandler([&](const dap::BreakpointLocationsRequest& message) {
 			logger->startTrace("breakpointLocationsRequest");
 			dap::BreakpointLocationsResponse response = MessageBreakpointLocationsRequest::Run(message);
+			
+			client->addBreakpoint(message.source.path.value(), message.line);
 			
 			logger->endTrace("breakpointLocationsRequest");
 
@@ -301,22 +307,20 @@ int main(int argc, char* argv[], char* envp[]) {
 	std::unique_lock<std::mutex> lock(mutex);
 	while (!terminate) {
 		cv.wait_for(lock, std::chrono::seconds(3), [&] { return terminate; });
-		//std::cout << "Waiting message " << terminate << std::endl;
+		std::cerr << "App Waiting message " << terminate << std::endl;
 	};
 
-	//session->startProcessingMessages
+	//sesslion->startProcessingMessages
 	auto waitProcess = [&]() {
 		std::unique_lock<std::mutex> lockApp(mutexApp);
 
 		while (!terminateApp) {
 			cvApp.wait_for(lockApp, std::chrono::seconds(5), [&] { return terminateApp; });
-			//std::cout << "App Waiting message " << terminateApp << std::endl;
+			std::cerr << "App Waiting message " << terminateApp << std::endl;
 		}
 	};
 
 	std::thread t1(waitProcess);
-
-	// Wait for t1 to finish
 	t1.join();
 
 	logger->info("Server stopping...");
@@ -327,27 +331,3 @@ int main(int argc, char* argv[], char* envp[]) {
 	return 0;
 }
 
-//// Create a socket to the server. This will be used for the client side of the
-//// connection.
-//auto client = dap::net::connect("localhost", kPort);
-//if (!client) {
-//	logger->error("Couldn't connect to server");
-//	return 1;
-//}
-
-//// Attach a session to the client socket.
-//auto session = dap::Session::create();
-//session->bind(client);
-
-//// Set an initialize request to the server.
-//auto future = session->send(dap::InitializeRequest{});
-//logger->info("Client sent initialize request to server");
-//logger->info("Waiting for response from server...");
-//// Wait on the response.
-//auto response = future.get();
-//logger->trace("main", "Response received from server");
-//logger->info("Disconnecting...");
-//// Disconnect.
-//session->send(dap::DisconnectRequest{});
-
-//logger->endTrace("main");

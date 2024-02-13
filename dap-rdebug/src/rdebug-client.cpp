@@ -1,6 +1,7 @@
 #include "rdebug-client.h"
 #include <chrono>
 #include <thread>
+#include <streambuf>
 
 RDebugClient* RDebugClient::createRDebugClient(int remotePort) {
 	RDebugClient* client = new RDebugClient();
@@ -90,7 +91,7 @@ constexpr std::string_view CMD_PAUSE = "pause";
 constexpr std::string_view CMD_QUIT = "quit";
 constexpr std::string_view CMD_STEP = "step";
 constexpr std::string_view CMD_ADD_BREAKPOINT = "break";
-constexpr std::string_view CMD_BREAKPOINTS = "infro break";
+constexpr std::string_view CMD_BREAKPOINTS = "info break";
 constexpr std::string_view CMD_CONDITION = "condition";
 constexpr std::string_view CMD_DELETE_BREAKPOINT = "delete";
 constexpr std::string_view CMD_ENABLE_BREAKPOINT = "enable breakpoint";
@@ -104,11 +105,10 @@ constexpr std::string_view CMD_VAR_GLOBAL = "var global";
 constexpr std::string_view CMD_VAR_INSTANCE = "var instance";
 constexpr std::string_view CMD_VAR_LOCAL = "var local";
 
-
 bool RDebugClient::start() {
 	logger->startTrace("RDebugClient::start");
 
-	const bool result = this->client->write(CMD_START.data(), CMD_START.length());
+	const bool result = this->send(CMD_START.data());
 
 	logger->endTrace("RDebugClient::start");
 	return result;
@@ -117,9 +117,66 @@ bool RDebugClient::start() {
 bool RDebugClient::finish() {
 	logger->startTrace("RDebugClient::finish");
 
-	const bool result = this->client->write(CMD_START.data(), CMD_START.length());
+	const bool result = this->send(CMD_START.data());
 
 	logger->endTrace("RDebugClient::finish");
 	return result;
 }
 
+bool RDebugClient::send(std::string command) {
+	std::string sendBuffer = command + "\r\n";
+
+	const bool result = this->client->write(sendBuffer.c_str(), sendBuffer.length());
+
+	return result;
+}
+
+std::string RDebugClient::sendAndWait(std::string command) {
+	const bool result = this->send(command.c_str());
+
+	if (result) {
+		char* buffer = (char*)std::malloc(1024);
+		int read = this->client->read(buffer, 1024);
+		buffer[read + 1] = '\0';
+		std::string text(buffer);
+
+		return text;
+	}
+
+	return "";
+}
+
+bool RDebugClient::addBreakpoint(std::string source, int line) {
+	logger->startTrace("RDebugClient::addBreakpoint");
+	
+	//breakpoint source:line
+	std::string command;
+	command.append(CMD_ADD_BREAKPOINT.data())
+		.append(" ")
+		.append(source)
+		.append(":")
+		.append(std::to_string(line));
+
+	//"<breakpointAdded no=\"" << bp.index << "\" location=\"" << escapeXml(bp.file) << ':' << bp.line << "\" />";
+	std::string response = this->sendAndWait(command);
+
+	logger->endTrace("RDebugClient::finish");
+	return response.length() > 0;
+}
+
+bool RDebugClient::removeBreakpoint(std::string source, int line) {
+	logger->startTrace("RDebugClient::removeBreakpoint");
+
+	int index = 0;
+	//delete index
+	std::string command;
+	command.append(CMD_DELETE_BREAKPOINT.data())
+		.append(" ")
+		.append(std::to_string(index));
+
+	// "<breakpointDeleted no=\"" << index << "\" />";
+	std::string response = this->sendAndWait(command);
+
+	logger->endTrace("RDebugClient::finish");
+	return response.length() > 0;
+}

@@ -4,9 +4,10 @@ dap::InitializeResponse MessageInitializeRequest::Run(const dap::InitializeReque
 	dap::InitializeResponse response;
 
 	response.supportsBreakpointLocationsRequest = true;
-	response.supportsCancelRequest = true;
+	response.supportsConditionalBreakpoints = true;
+	//response.supportsCancelRequest = true;
 	response.supportsEvaluateForHovers = true;
-	response.supportsLogPoints = true;
+	//response.supportsLogPoints = true;
 	response.supportsTerminateRequest = true;
 
 	return response;

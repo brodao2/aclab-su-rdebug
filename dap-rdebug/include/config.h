@@ -14,7 +14,7 @@ private:
 	std::string logFile = "";
 	int remotePort = 1234; //RDebug default port
 	std::string extension = "";
-	bool waitAttach = false;
+	bool waitAttach = true;
 
 public:
 	static Config* getInstance()
