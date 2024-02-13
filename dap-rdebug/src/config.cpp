@@ -46,3 +46,7 @@ int Config::getDebugAdapterPort() {
 std::string Config::getExtension() {
 	return this->extension;
 }
+
+bool Config::isWaitAttach() {
+	return this->waitAttach;
+}

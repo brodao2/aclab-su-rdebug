@@ -94,10 +94,16 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.debug.onDidStartDebugSession(async session => {
+		vscode.debug.onDidStartDebugSession(async (session: vscode.DebugSession) => {
 			const config = session.configuration;
-			if (config.request !== "launch" || config.useTerminal || config.noDebug) { return; };
+			//if (config.request !== "launch" || config.useTerminal || config.noDebug) { return; };
+			if (config.noDebug) {
+				return;
+			};
 
+			// session.getDebugProtocolBreakpoint().then((value: vscode.DebugProtocolBreakpoint) => {
+			// 	value.
+			// })
 			// const args: DebugProtocol.EvaluateArguments = {
 			// 	expression: ",eval $stdout.sync=true",
 			// 	context: "repl"

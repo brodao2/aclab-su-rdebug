@@ -99,7 +99,7 @@
                 "description": "Remote port.",
                 "default": 1234
               },
-              "extensionDevelopmentPath": {
+              "remoteWorkspaceRoot": {
                 "type": "string",
                 "description": "Extension Development Path (root).",
                 "default": "${workspaceFolder}"
@@ -133,7 +133,7 @@
                 "description": "Remote port.",
                 "default": 1234
               },
-              "extensionDevelopmentPath": {
+              "remoteWorkspaceRoot": {
                 "type": "string",
                 "description": "Extension Development Path (root).",
                 "default": "${workspaceFolder}"

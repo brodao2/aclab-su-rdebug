@@ -20,9 +20,9 @@ Logger::Logger() {
 	spdlog::set_pattern("[%H:%M:%e] [dap-rdebug] [%6t] [%L] %v");
 	spdlog::set_level(static_cast<spdlog::level::level_enum>(config->getLogLevel()));
 
-	//this->console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>("console");
-	this->console = spdlog::stdout_color_mt("console");
-	this->console->set_level(spdlog::level::off);
+	////this->console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>("console");
+	//this->console = spdlog::stdout_color_mt("console");
+	//this->console->set_level(spdlog::level::off);
 
 	if (config->getLogFile() != "") {
 		//this->fileLog = std::make_shared<spdlog::sinks::basic_file_sink_mt>("file", filename, true);
@@ -36,10 +36,10 @@ Logger::Logger() {
 		}
 
 		//delete this->allLoggers;
-		//this->allLoggers = new spdlog::logger("all", { this->console, this->fileLog });
+		//this->allLoggers = new spdlog::logger("all", { //this->console, this->fileLog });
 	}
 	else {
-	//this->allLoggers = new spdlog::logger("all", { this->console });
+	//this->allLoggers = new spdlog::logger("all", { //this->console });
 	}
 }
 
@@ -64,14 +64,14 @@ Logger::~Logger() {
 		this->debug(message);
 	}
 
-	//this->console.reset();
-	//this->console = nullptr;
+	////this->console.reset();
+	////this->console = nullptr;
 	//this->fileLog.reset();
 	//this->fileLog = nullptr;
 }
 
 void Logger::debug(std::string message, ...) {
-	this->console->debug(message);
+	//this->console->debug(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->debug(message);
@@ -81,7 +81,7 @@ void Logger::debug(std::string message, ...) {
 }
 
 void Logger::info(std::string message, ...) {
-	this->console->info(message);
+	//this->console->info(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->info(message);
@@ -91,7 +91,7 @@ void Logger::info(std::string message, ...) {
 }
 
 void Logger::critical(std::string message, ...) {
-	this->console->critical(message);
+	//this->console->critical(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->critical(message);
@@ -101,7 +101,7 @@ void Logger::critical(std::string message, ...) {
 }
 
 void Logger::error(std::string message, ...) {
-	this->console->error(message);
+	//this->console->error(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->error(message);
@@ -111,7 +111,7 @@ void Logger::error(std::string message, ...) {
 }
 
 void Logger::warn(std::string message, ...) {
-	this->console->warn(message);
+	//this->console->warn(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->warn(message);
@@ -121,7 +121,7 @@ void Logger::warn(std::string message, ...) {
 }
 
 void Logger::startTrace(std::string label) {
-	this->console->trace("[{}] start.", label);
+	//this->console->trace("[{}] start.", label);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->trace("[{}] start", label);
@@ -132,7 +132,7 @@ void Logger::startTrace(std::string label) {
 }
 
 void Logger::trace(std::string label, std::string message, ...) {
-	this->console->trace(message);
+	//this->console->trace(message);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->trace(message);
@@ -145,7 +145,7 @@ void Logger::trace(std::string label, std::string message, ...) {
 void Logger::endTrace(std::string label) {
 	double elapsed = this->endChrono(label);
 	
-	this->console->trace("[{}] end. Elapsed {:.3} ms", label, elapsed);
+	//this->console->trace("[{}] end. Elapsed {:.3} ms", label, elapsed);
 
 	if (this->fileLog != nullptr) {
 		this->fileLog->trace("[{}] end. Elapsed {:.3} ms", label, elapsed);
@@ -162,7 +162,7 @@ void Logger::chrono(std::string label) {
 	if (this->chronoMap.contains(label)) {
 		spdlog::stopwatch* sw = this->chronoMap.at(label);
 
-		this->console->trace("[{0}] Partial {1:.3} ticks", label.c_str(), sw->elapsed().count());
+		//this->console->trace("[{0}] Partial {1:.3} ticks", label.c_str(), sw->elapsed().count());
 	}
 }
 
@@ -178,7 +178,7 @@ double Logger::endChrono(std::string label) {
 		delete sw;
 	}
 	else {
-		this->console->trace("chrono label not found: {0}", label);
+		//this->console->trace("chrono label not found: {0}", label);
 	}
 
 	return result;

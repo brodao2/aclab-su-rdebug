@@ -43,7 +43,7 @@ export class SuDebugConfigurationProvider implements DebugConfigurationProvider 
     }
 
     if (!config.cwb || config.cwb === "") {
-      config.cwb = config.extensionDevelopmentPath;
+      config.cwb = config.remoteWorkspaceRoot;
       window.showInformationMessage(
         vscode.l10n.t("Parameter CWB not informed. Setting to {0}", config.cwb)
       );
@@ -53,12 +53,12 @@ export class SuDebugConfigurationProvider implements DebugConfigurationProvider 
   }
 
   protected initialize(config: DebugConfiguration) {
-  //   config.type = SuDebugConfigurationProvider.TYPE;
-  //   config.name = "._NAME"; 
+    //   config.type = SuDebugConfigurationProvider.TYPE;
+    //   config.name = "._NAME"; 
   }
 
   protected finalize(config: DebugConfiguration) {
-    
+
     return config;
   }
 

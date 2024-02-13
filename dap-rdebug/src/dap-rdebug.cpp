@@ -36,6 +36,7 @@
 #include <msg-disconnect-request.h>
 #include <msg-breakpoints-locations-request.h>
 #include <rdebug-client.h>
+#include <msg-attach-request.h>
 
 #define VERSION "0.0.1"
 #define APP_NAME "dap-rdebug"
@@ -80,7 +81,7 @@ int main(int argc, char* argv[], char* envp[]) {
 #else
 		.required();
 #endif
-	program.add_argument("-e", "--extension-development-path")
+	program.add_argument("-e", "--remote-workspace-root")
 		.help("extension development path (root)")
 #ifndef DEBUG
 		.default_value("xxxxxxxxxxxxxx");
@@ -117,7 +118,7 @@ int main(int argc, char* argv[], char* envp[]) {
 	*/
 	Config* config = Config::getInstance();
 
-	config->setExtension(program.get<std::string>("--extension-development-path"));
+	config->setExtension(program.get<std::string>("--remote-workspace-root"));
 	if (program.is_used("--verbose")) {
 		config->setLogLevel(spdlog::level::trace);
 	}
@@ -206,6 +207,15 @@ int main(int argc, char* argv[], char* envp[]) {
 			logger->startTrace("initializeRequest");
 			dap::InitializeResponse response = MessageInitializeRequest::Run(message);
 
+			if (config->isWaitAttach()) {
+				logger->debug("waitting attach...");
+				int x = 20;
+			while (x > 0) {
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+				x--;
+			}
+			}
+
 			logger->endTrace("initializeRequest");
 
 			return response;
@@ -213,26 +223,31 @@ int main(int argc, char* argv[], char* envp[]) {
 
 		session->registerHandler([&](const dap::AttachRequest& message) {
 			logger->startTrace("attachRequest");
-			dap::AttachResponse response;// = MessageInitializeRequest::Run(message);
+			dap::AttachResponse response = MessageAttachRequest::Run(message);
 
-			client = new RDebugClient();
-			if (!client->connect(config->getRemotePort())) {
-				dap::ErrorResponse error;
-				dap::Message message;
-				dap::object variables;
-
-				variables.insert({ "port", std::to_string(config->getRemotePort()) });
-			
-				message.format = "Connection to SU was not possible. RemotePor: {port}";
-				message.showUser = true;
-				message.variables = variables;
-				
-				error.error = message;
-				
-				//return error;
+			client = RDebugClient::createRDebugClient(config->getRemotePort());
+			if (client == nullptr) {
+				logger->error("Connection to RDebug port failure.");
 			}
 
+			client->start();
+
 			logger->endTrace("attachRequest");
+			return response;
+			});
+
+		session->registerHandler([&](const dap::LaunchRequest& message) {
+			logger->startTrace("launchRequest");
+			dap::LaunchResponse response;
+
+			client = RDebugClient::createRDebugClient(config->getRemotePort());
+			if (client == nullptr) {
+				logger->error("Connection to RDebug port failure.");
+			}
+
+			client->start();
+
+			logger->endTrace("launchRequest");
 			return response;
 			});
 
@@ -255,6 +270,8 @@ int main(int argc, char* argv[], char* envp[]) {
 			dap::DisconnectResponse response = MessageDisconnectRequest::Run(message);
 
 			if (client) {
+				client->finish();
+
 				delete client;
 				client = nullptr;
 			}
@@ -274,8 +291,8 @@ int main(int argc, char* argv[], char* envp[]) {
 		};
 
 	// Create the network server
-	std::shared_ptr<dap::Reader> in = dap::file(stdin, false);
-	std::shared_ptr<dap::Writer> out = dap::file(stdout, false);
+	std::shared_ptr<dap::Reader> in = dap::file(stdin, true);
+	std::shared_ptr<dap::Writer> out = dap::file(stdout, true);
 	session->bind(in, out);
 
 	// Wait for the client to disconnect (or reach a 5 second timeout)

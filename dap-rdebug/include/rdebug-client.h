@@ -9,13 +9,19 @@ class RDebugClient {
 private:
 	std::shared_ptr<dap::ReaderWriter> client = nullptr;
 	int remotePort = 0;
-	Logger* logger = nullptr;
+	Logger* logger = Logger::getInstance();
 
-public:
 	RDebugClient();
+public:
+	static RDebugClient* createRDebugClient(int remotePort);
+
 	~RDebugClient();
 
 	bool connect(int remotePort);
 	bool disconnect();
+	bool isOpen();
+
+	bool start();
+	bool finish();
 
 };

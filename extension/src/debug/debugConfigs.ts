@@ -2,7 +2,7 @@ import { DebugConfiguration } from "vscode";
 
 export interface SuDebugConfiguration extends DebugConfiguration {
   remotePort: number;
-  extensionDevelopmentPath: string;
+  remoteWorkspaceRoot: string;
   trace: "off" | "message" | "verbose";
   logToFile: string;
   sketchUpProgram: string;
