@@ -216,6 +216,15 @@ int main(int argc, char* argv[], char* envp[]) {
 			}
 			}
 
+			client = RDebugClient::createRDebugClient(config->getRemotePort());
+			if (client == nullptr) {
+				logger->error("Connection to RDebug port failure.");
+				exit(10);
+			}
+
+			dap::InitializedEvent initializedEvent;
+			session->send(initializedEvent);
+
 			logger->endTrace("initializeRequest");
 
 			return response;
@@ -225,16 +234,8 @@ int main(int argc, char* argv[], char* envp[]) {
 			logger->startTrace("attachRequest");
 			dap::AttachResponse response = MessageAttachRequest::Run(message);
 
-			client = RDebugClient::createRDebugClient(config->getRemotePort());
-			if (client == nullptr) {
-				logger->error("Connection to RDebug port failure.");
-				exit(10);
-			}
-			else {
-				client->start();
-			}
-
-
+			client->start();
+		
 			logger->endTrace("attachRequest");
 			return response;
 			});
@@ -243,28 +244,93 @@ int main(int argc, char* argv[], char* envp[]) {
 			logger->startTrace("launchRequest");
 			dap::LaunchResponse response;
 
-			client = RDebugClient::createRDebugClient(config->getRemotePort());
-			if (client == nullptr) {
-				logger->error("Connection to RDebug port failure.");
-				exit(11);
-			}
-
 			client->start();
 
 			logger->endTrace("launchRequest");
 			return response;
 			});
 
-		session->registerHandler([&](const dap::BreakpointLocationsRequest& message) {
-			logger->startTrace("breakpointLocationsRequest");
-			dap::BreakpointLocationsResponse response = MessageBreakpointLocationsRequest::Run(message);
-			
-			client->addBreakpoint(message.source.path.value(), message.line);
-			
-			logger->endTrace("breakpointLocationsRequest");
+		//session->registerHandler([&](const dap::BreakpointLocationsRequest& message) {
+		//	logger->startTrace("breakpointLocationsRequest");
+		//	dap::BreakpointLocationsResponse response = MessageBreakpointLocationsRequest::Run(message);
+		//	
+		//	if (client->addBreakpoint(message.source.path.value(), message.line, "")) {
+		//		//client->continue_();
+		//	}
+		//	
+		//	logger->endTrace("breakpointLocationsRequest");
+
+		//	return response;
+		//	});
+
+		session->registerHandler([&](const dap::SetBreakpointsRequest& message) {
+			logger->startTrace("setBreakpointsRequest");
+			dap::SetBreakpointsResponse response;
+			dap::array<dap::SourceBreakpoint> breakpoints = message.breakpoints.value();
+
+			if (client->removeBreakpoint(message.source.path.value())) {
+				for (auto sourceBreakpoint_i = breakpoints.begin(); sourceBreakpoint_i != breakpoints.end(); sourceBreakpoint_i++)
+			{
+				dap::SourceBreakpoint breakpoint = *sourceBreakpoint_i;
+				dap::Breakpoint addedBreakpoint;
+				
+				addedBreakpoint.line = breakpoint.line;
+				addedBreakpoint.verified = client->addBreakpoint(message.source.path.value(), breakpoint.line, 
+					breakpoint.condition.has_value() ? breakpoint.condition.value() : "");
+				if (!addedBreakpoint.verified) {
+					addedBreakpoint.message = "Error addBreakpoint";
+				}
+
+				response.breakpoints.emplace_back(addedBreakpoint);
+			}
+			} else {
+				logger->error("Não foi possível remover BP de ?????");
+			}
+
+
+			logger->endTrace("SetBreakpointsRequest");
 
 			return response;
-			});
+			}
+		);
+
+		session->registerHandler([&](const dap::ConfigurationDoneRequest& message) {
+			logger->startTrace("configurationDoneRequest");
+			dap::ConfigurationDoneResponse response;;
+
+
+			logger->endTrace("configurationDoneRequest");
+
+			return response;
+			}
+		);
+
+		session->registerHandler([&](const dap::ThreadsRequest& message) {
+			logger->startTrace("threadsRequest");
+			dap::ThreadsResponse response;
+			dap::array<dap::Thread> threads;
+			std::vector<Thread> threadList;
+
+			if (client->threads(threadList)) {
+				for (auto threads_i = threadList.begin(); threads_i != threadList.end(); threads_i++)
+				{
+					Thread thread = *threads_i;
+					dap::Thread threadResponse;
+
+					threadResponse.id = thread.id;
+					threadResponse.name = thread.name;
+
+					threads.emplace_back(threadResponse);
+				}
+			}
+
+			response.threads = threads;
+
+			logger->endTrace("threadsnDoneRequest");
+
+			return response;
+			}
+		);
 
 		// The Disconnect request is made by the client before it disconnects
 		// from the server.

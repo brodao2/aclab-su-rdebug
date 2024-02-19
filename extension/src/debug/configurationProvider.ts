@@ -6,14 +6,15 @@ import {
   window,
 } from "vscode";
 import * as vscode from "vscode";
-import * as Net from "net";
 
 export class SuDebugConfigurationProvider implements DebugConfigurationProvider {
   static TYPE: string = "aclab-su-rdebug";
 
   //protected _server?: Net.Server;
 
-  constructor() { }
+  constructor() {
+
+  }
 
   /**
    * Massage a debug configuration just before a debug session is being launched,
@@ -42,11 +43,8 @@ export class SuDebugConfigurationProvider implements DebugConfigurationProvider 
       }
     }
 
-    if (!config.cwb || config.cwb === "") {
-      config.cwb = config.remoteWorkspaceRoot;
-      window.showInformationMessage(
-        vscode.l10n.t("Parameter CWB not informed. Setting to {0}", config.cwb)
-      );
+    if (!config.cwd || config.cwd === "") {
+      config.cwd = config.remoteWorkspaceRoot;
     }
 
     return Promise.resolve(config);

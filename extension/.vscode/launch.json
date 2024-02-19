@@ -11,7 +11,8 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"P:\\sketchup\\actools-su\\actools.code-workspace"
+				//"P:\\sketchup\\actools-su\\actools.code-workspace",
+				"P:\\GitHub\\sketchup-ruby-api-tutorials"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"

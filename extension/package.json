@@ -96,7 +96,7 @@
                 "default": []
               },
               "remotePort": {
-                "type": "number",
+                "type": "number|string",
                 "description": "Remote port.",
                 "default": 1234
               },

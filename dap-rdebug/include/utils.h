@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <regex>
 
 template<typename InputIt>
 std::string join(InputIt first,
