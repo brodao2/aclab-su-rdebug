@@ -8,10 +8,12 @@
 struct Breakpoint {
 	std::string source;
 	int line;
+	std::string index;
 
-	Breakpoint(std::string source, int line) {
+	Breakpoint(std::string source, int line, std::string index) {
 		this->source = source;
 		this->line = line;
+		this->index = index;
 	}
 };
 
@@ -33,7 +35,7 @@ private:
 	std::shared_ptr<dap::ReaderWriter> client = nullptr;
 	int remotePort = 0;
 	Logger* logger = Logger::getInstance();
-	std::map<std::string, Breakpoint*> breakpointsMap;
+	std::map<std::string, std::vector<Breakpoint*>*> breakpointsMap;
 
 	RDebugClient();
 protected:
@@ -58,7 +60,7 @@ public:
 	bool removeBreakpoint(std::string source);
 	bool removeBreakpoint2(std::string indexes);
 	bool setEnableBreakpoint(std::string source, int line, bool enable);;
-	bool setEnableBreakpoint(std::string index, bool enable);
+	bool setEnableBreakpoint2(std::string index, bool enable);
 	void updateBreakpointsMap();
 	bool threads(std::vector<Thread>& threadList);
 };

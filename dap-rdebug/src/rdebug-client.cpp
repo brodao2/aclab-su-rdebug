@@ -52,11 +52,11 @@ RDebugClient::~RDebugClient() {
 	logger->startTrace("RDebugClient::~RDebugClient");
 
 	this->disconnect();
-
-	for (auto breakPoint_i = this->breakpointsMap.begin(); breakPoint_i != this->breakpointsMap.end(); breakPoint_i++)
+	for (auto breakPoint_i = this->breakpointsMap.cbegin(); breakPoint_i != this->breakpointsMap.cend(); breakPoint_i++)
 	{
-		delete breakPoint_i->second;
+		this->removeBreakpoint(breakPoint_i->first);
 	}
+
 	this->breakpointsMap.clear();
 
 	logger->endTrace("RDebugClient::~RDebugClient");
@@ -208,9 +208,16 @@ bool RDebugClient::addBreakpoint(std::string source, int line, std::string condi
 
 	if (std::regex_match(response, match, ADD_BREAKPOINT_RESPONSE_RE)) {
 		std::string index_s = match[1];
-		this->breakpointsMap.emplace(index_s, new Breakpoint(source, line));
+		auto breakpointsMap_i = this->breakpointsMap.find(source);
 
-		this->setEnableBreakpoint(index_s, true);
+		if (breakpointsMap_i == this->breakpointsMap.end()) {
+			this->breakpointsMap.emplace(source, new std::vector<Breakpoint*>());
+			breakpointsMap_i = this->breakpointsMap.find(source);
+		}
+
+		breakpointsMap_i->second->push_back(new Breakpoint(source, line, index_s));
+
+		this->setEnableBreakpoint2(index_s, true);
 	}
 
 	logger->endTrace("RDebugClient::addBreakpoint");
@@ -221,13 +228,18 @@ bool RDebugClient::setEnableBreakpoint(std::string source, int line, bool enable
 	logger->startTrace("RDebugClient::setEnableBreakpoint");
 	bool result = false;
 
-	for (auto breakPoint_i = this->breakpointsMap.begin(); breakPoint_i != this->breakpointsMap.end(); breakPoint_i++)
-	{
-		Breakpoint* breakpoint = breakPoint_i->second;
+	auto breakPointMap_i = this->breakpointsMap.find(source);
+	if (breakPointMap_i != this->breakpointsMap.end()) {
+		std::vector<Breakpoint*>* breakpoints = breakPointMap_i->second;
 
-		if ((breakpoint->source == source) && (breakpoint->line == line)) {
-			result = this->setEnableBreakpoint(breakPoint_i->first, enable);
-			break;
+		for (size_t i = 0; i < breakpoints->size(); i++)
+		{
+			Breakpoint* breakPoint = breakpoints->at(i);
+
+			if ((breakPoint->line == line)) {
+				result = this->setEnableBreakpoint2(breakPoint->index, enable);
+				break;
+			}
 		}
 	}
 
@@ -235,7 +247,7 @@ bool RDebugClient::setEnableBreakpoint(std::string source, int line, bool enable
 	return result;
 }
 
-bool RDebugClient::setEnableBreakpoint(std::string index, bool enable) {
+bool RDebugClient::setEnableBreakpoint2(std::string index, bool enable) {
 	logger->startTrace("RDebugClient::setEnableBreakpoint");
 
 	//^(en|dis)(?:able)?\\s+breakpoints((?:\\s+\\d+)+)$
@@ -255,20 +267,23 @@ bool RDebugClient::removeBreakpoint(std::string source) {
 	bool result = true;
 	std::string indexes = "";
 
-	for (auto breakPoint_i = this->breakpointsMap.begin(); breakPoint_i != this->breakpointsMap.end(); breakPoint_i++)
-	{
-		Breakpoint* breakpoint = breakPoint_i->second;
+	auto breakPointMap_i = this->breakpointsMap.find(source);
+	if (breakPointMap_i != this->breakpointsMap.end()) {
+		std::vector<Breakpoint*>* breakpoints = breakPointMap_i->second;
 
-		if ((breakpoint->source == source)) {
-			result = this->setEnableBreakpoint(breakPoint_i->first, false);
-			indexes.append(" ").append(breakPoint_i->first);
+		for (size_t i = 0; i < breakpoints->size(); i++)
+		{
+			Breakpoint* breakPoint = breakpoints->at(i);
 
-			delete breakPoint_i->second;
-			this->breakpointsMap.erase(breakPoint_i->first);
+			indexes.append(" ").append(breakPoint->index);
+
+			delete breakPoint;
 		}
 	}
 
-	if (!indexes.empty()) {
+	this->breakpointsMap.erase(source);
+
+	if (this->isOpen() && !indexes.empty()) {
 		result = this->removeBreakpoint(indexes);
 	}
 
@@ -307,7 +322,7 @@ void RDebugClient::updateBreakpointsMap() {
 
 	for (auto breakPoint_i = this->breakpointsMap.begin(); breakPoint_i != this->breakpointsMap.end(); breakPoint_i++)
 	{
-		Breakpoint* breakpoint = breakPoint_i->second;
+		//Breakpoint* breakpoint = breakPoint_i->second;
 
 		//if ((breakpoint->source == source) && (breakpoint->line == line)) {
 		//	result = this->setEnableBreakpoint(breakPoint_i->first, enable);
