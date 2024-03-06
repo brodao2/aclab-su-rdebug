@@ -3,14 +3,15 @@ import * as path from "path";
 import { SuDebugConfiguration } from "./debugConfigs";
 import { SketchUpProcess } from "./sketchUpProcess";
 
+let sketchUpProcess: SketchUpProcess | undefined = undefined;
+
 export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-	private sketchUpProcess: SketchUpProcess | undefined = undefined;
 
 	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
 		// use the executable specified in the package.json if it exists
 		// or determine it based on some other information(e.g.the session)
 		if (session.configuration.request === "launch") {
-			this.launchSketchUp(session.configuration as SuDebugConfiguration);
+			launchSketchUp(session.configuration as SuDebugConfiguration);
 			session.configuration.request = "attach";
 		}
 
@@ -23,23 +24,10 @@ export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescr
 	}
 
 	dispose() {
-		if (this.sketchUpProcess) {
-			this.sketchUpProcess.stop();
-			this.sketchUpProcess = undefined;
-		}
-	}
-
-	private launchSketchUp(configuration: SuDebugConfiguration) {
-		if (this.sketchUpProcess === undefined) {
-			if (!configuration.sketchUpProgram) {
-				vscode.window.showErrorMessage("[SketchUpProgram] not informed in debug configuration");
-			} else {
-				this.sketchUpProcess = new SketchUpProcess(configuration.sketchUpProgram, configuration.sketchUpArguments);
-				this.sketchUpProcess.launch(configuration.remotePort);
-			}
-		} else {
-			vscode.window.showInformationMessage("sketchUp already running");
-		}
+		// if (this.sketchUpProcess) {
+		// 	this.sketchUpProcess.stop();
+		// 	this.sketchUpProcess = undefined;
+		// }
 	}
 
 	private getDAP(configuration: vscode.DebugConfiguration): { command: string, args: string[] } {
@@ -88,5 +76,24 @@ export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescr
 		}
 
 		return { command: pathDAP, args: args };
+	}
+}
+
+function launchSketchUp(configuration: SuDebugConfiguration) {
+	if (sketchUpProcess === undefined) {
+		if (!configuration.sketchUpProgram) {
+			vscode.window.showErrorMessage("[SketchUpProgram] not informed in debug configuration");
+		} else {
+			sketchUpProcess = new SketchUpProcess(configuration.sketchUpProgram, configuration.sketchUpArguments);
+			sketchUpProcess.launch(configuration.remotePort);
+		}
+	} else {
+		vscode.window.showInformationMessage("SketchUp already running");
+	}
+}
+
+export function stopSketchUp() {
+	if (sketchUpProcess !== undefined) {
+		sketchUpProcess.stop();
 	}
 }

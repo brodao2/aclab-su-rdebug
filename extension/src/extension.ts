@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SuDebugConfigurationProvider } from './debug/configurationProvider';
-import { SuDebugAdapterDescriptorFactory } from './debug/debugAdapterDescriptorFactory';
+import { SuDebugAdapterDescriptorFactory, stopSketchUp } from './debug/debugAdapterDescriptorFactory';
 import { SuDebugAdapterTrackerFactory } from './debug/debugTrackerDescriptorFactory';
 import * as path from 'path';
 
@@ -86,6 +86,12 @@ export function activate(context: vscode.ExtensionContext) {
 	// 	})
 	// );
 
+	vscode.debug.onDidReceiveDebugSessionCustomEvent(event => {
+		if (event.event === 'stopped') {
+			// ...
+		}
+	});
+
 	context.subscriptions.push(
 		vscode.debug.onDidReceiveDebugSessionCustomEvent(
 			(debugEvent: vscode.DebugSessionCustomEvent) => {
@@ -120,7 +126,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
-			console.log("onDidTerminateDebugSession");
+			if (session.type === "ac-lab-rdebug") {
+				stopSketchUp();
+			}
 		})
 	);
 
