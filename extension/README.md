@@ -1,4 +1,4 @@
-# AC Lab SketchUp Extension Debugger
+# AC Lab SketchUp Extension Debugger [(english)](README-en.md)
 
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
@@ -10,36 +10,99 @@
 <!-- markdownlint-enabled -->
 <!-- prettier-ignore-end -->
 
-## Features
+## Recursos
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Permite a depuração de extensões [**SketchUp**](https://www.sketchup.com) utilizando o protocolo _ruby-debug-ide_ sob protocolo _DAP_.
 
-For example if there is an image subfolder under your extension project workspace:
+## Requisitos
 
-\!\[feature X\]\(images/feature-x.png\)
+- Fundamentos de uso do **VS-Code**.
+- [SketchUp Ruby API Debugger](https://github.com/SketchUp/sketchup-ruby-debugger) atualizado e instalado, conforme seu sistema operacional.
+  Ignore a configuração deste no **VS-CODE**, efetuando a nossa [configuração](#configuração).
+- [VS Code Shopify Ruby (_shopify.ruby-extensions-pack_)](https://github.com/Shopify/vscode-shopify-ruby) instalado e funcional.
+- Esta extensão instalada.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Configuração de depuração
 
-## Requirements
+### Adicionar
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Acione o painel de comandos (`F1` ou `ctrl+p`)
+- Selecione o comando "_Debug: Add Configuration..._"(`debug.addConfiguration`)
+- O arquivo `launch.json` será aberto e lhe apresentará um lista pra escolher o depurador. Selecione `SU: Attach to SketchUp already running` ou `SU: Launch SketchUp and attach then`.
+- Finalize a configuração conforme o tipo escolhido. 
 
-## Extension Settings
+### Executar (_launch request_)
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Use esse tipo para iniciar a execução do **SketchUp** e na sequência, o processo de depuração se anexará a essa instância.
 
-For example:
+```code
+  ...
+  "configurations": [
+    {
+      "type": "aclab-su-rdebug",
+      "request": "launch",
+      "name": "Launch SketchUp and attach",
+      "sketchUpProgram": "C:\\Program Files\\SketchUp\\SketchUp ${1|2023,2022,2021,2020,2019}\\SketchUp.exe",
+      "remotePort": 1234,
+      "sketchUpArguments": [
+        "\\\sample\\.skp"
+      "remoteWorkspaceRoot": "${workspaceFolder}"
+    },
+  ...
+  ]
+  ...
+```
+| Atributo | Descrição |
+| -------- | --------- |
+| `remotePort` | Porta de conexão do depurador **sketchup-ruby-debugger** |
+| `sketchUpProgram` | Caminho completo do executável **SketchUp**. |
+|                   | Você pode fixar uma versão ou uma lista de versões. Exemplos: |
+| | Fixa: `C:\\Program Files\\SketchUp\\SketchUp 2023\\SketchUp.exe` |
+| | Versão 2023/22/21: `C:\\Program Files\\SketchUp\\SketchUp ${1\|2023,2022,2021}\\SketchUp.exe` |
+| `sketchUpArguments` | Lista de argumentos a serem repassados a aplicação **SketchUp**. Opcional, sendo valor padrão `[]`. |
+| `remoteWorkspaceRoot` | Pasta raiz da extensão **SketchUp** a depurar. Opcional, sendo o valor padrão `${workspaceFolder}`. |
 
-This extension contributes the following settings:
+### Anexar (_attach_)
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+Use esse tipo para anexar o processo de depuração a uma instância do **SketchUp** já em execução.
 
-## Known Issues
+```code
+  ...
+  "configurations": [
+    {
+      "type": "aclab-su-rdebug",
+      "request": "attach",
+      "name": "Attach to SketchUp",
+      "remotePort": 1234,
+      "remoteWorkspaceRoot": "${workspaceFolder}"
+    },
+  ...
+  ]
+  ...
+```
+| Atributo | Descrição |
+| -------- | --------- |
+| `remotePort` | Porta de conexão do depurador **sketchup-ruby-debugger** |
+| `remoteWorkspaceRoot` | Pasta raiz da extensão **SketchUp** a depurar. Opcional, sendo o valor padrão `${workspaceFolder}`. |
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Configurações de extensão
 
-## Contributors
+* `aclab-su-rdebug.enable`: Habilita/desabilita esta extensão.
+  Os valores possíveis são:
+  - `true`: habilita.
+  - `false`: desabilita.
+* `aclab-su-rdebug.trace`: Permite acompanhar a comunicação entre o **VS-Code** e o adaptador de depuração.
+  Esta configuração é útil para depuração, sendo os valores possíveis:
+  - `off`: desligado e é o valor padrão.
+  - `messages`: Apresenta a mensagem (enviada/recebida).
+  - `verbose`: Apresenta a mensagem (enviada/recebida) em detalhes.
+* `aclab-su-rdebug.trace`: Armazena a comunicação no arquivo especificado.
+
+## Ocorrências conhecidas
+
+Nenhuma ocorrência conhecida.
+
+## Mantenedor e Colaboradores
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -47,7 +110,7 @@ Calling out known issues can help limit users opening duplicate issues against y
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="16.66%"><a href="https://github.com/brodao2"><img src="https://avatars.githubusercontent.com/u/114854608?v=4?s=50" width="50px;" alt="Alan Cândido"/><br /><sub><b>Alan Cândido</b></sub></a><br /><a href="https://github.com/brodao2/aclab-su-rdebug/commits?author=brodao2" title="Code">💻</a> <a href="https://github.com/brodao2/aclab-su-rdebug/commits?author=brodao2" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/brodao2"><img src="https://avatars.githubusercontent.com/u/114854608?v=4?s=50" width="50px;" alt="Alan Cândido"/><br /><sub><b>Alan Cândido (mantenedor)</b></sub></a><br /><a href="https://github.com/brodao2/aclab-su-rdebug/commits?author=brodao2" title="Code">💻</a> <a href="https://github.com/brodao2/aclab-su-rdebug/commits?author=brodao2" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>

@@ -1,9 +1,10 @@
-# Change Log
+# Registro de alterações [(english)](CHANGELOG-en.md)
 
-All notable changes to the "aclab-su-rdebug" extension will be documented in this file.
+Todas as alterações significativas ​​na extensão "aclab-su-rdebug" serão documentadas neste arquivo.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+e este projeto segue o [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Não lançado]
 
-- Initial release
+- Lançamento inicial
