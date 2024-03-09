@@ -422,10 +422,11 @@ bool RDebugClient::where(std::vector<Frame>& frameList) {
 			if (std::regex_match(line, match, FRAME_RESPONSE_RE)) {
 				std::string index_s = match[1];
 				std::string file = match[2];
+				int lineNumber = std::atoi(match[3].str().c_str());
 				bool current = match.length() > 3;
 				//<frame no="2" file="P:/GitHub/sketchup-ruby-api-tutorials/examples/01_hello_cube/ex_hello_cube/main.rb" line="28" />
 				int index = std::stoi(index_s);
-				frameList.emplace_back(Frame(index, file, current));
+				frameList.emplace_back(Frame(index, file, lineNumber, current));
 			}
 		}
 	}

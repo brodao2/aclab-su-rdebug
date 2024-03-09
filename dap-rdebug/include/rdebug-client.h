@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "../include/dap/network.h"
 #include "logger.h"
 #include <dap/io.h>
@@ -31,11 +30,13 @@ struct Frame {
 	int id = 0;
 	std::string source = "";
 	int line = 0;
+	bool current = false;
 
-	Frame(int id, std::string source, int line) {
+	Frame(int id, std::string source, int line, bool current) {
 		this->id = id;
 		this->source = source;
 		this->line = line;
+		this->current = current;
 	}
 };
 
@@ -112,8 +113,9 @@ public:
 	bool quit();
 	bool start();
 	bool continue_();
-	bool _finish();
 	bool interrupt();
+	bool next();
+	bool stepOut();
 
 	bool addBreakpoint(std::string source, int line, std::string condition);
 	bool removeBreakpoint(std::string source);
@@ -124,7 +126,6 @@ public:
 	bool threads(std::vector<Thread>& threadList);
 	bool where(std::vector<Frame>& frameList);
 	bool scopes(std::vector<Scope*>& scopeList);
-	bool next();
 
 	bool getVariables(Scope* scope);
 	Scope* findScopeMap(std::string name);

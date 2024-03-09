@@ -50,6 +50,18 @@ enum class WaitServerEnum {
 	DontWaitServer
 };
 
+enum class StoppedReasonEnum {
+	Step,
+	Breakpoint, 
+	Exception, 
+	Pause, 
+	Entry,
+	Goto,
+	FunctionBreakpoint,
+	DataBreakpoint,
+	InstructionBreakpoint
+};
+
 WaitServerEnum waitServer = WaitServerEnum::DontWaitServer;
 
 int main(int argc, char* argv[], char* envp[]) {
@@ -202,6 +214,47 @@ int main(int argc, char* argv[], char* envp[]) {
 	std::condition_variable cv;
 	std::mutex mutex;  // guards 'terminate'
 	bool terminate = false;
+
+	//send Stopped event
+	const auto sendStoppedEvent = ([&](StoppedReasonEnum reason, int breakpointIndex = -1) {
+		dap::StoppedEvent event;
+		switch (reason) {
+			case StoppedReasonEnum::Step:
+				event.reason = "step";
+				break;
+			case StoppedReasonEnum::Breakpoint:
+				event.reason = "breakpoint";
+				break;
+			case StoppedReasonEnum::Exception:
+				event.reason = "exception";
+				break;
+			case StoppedReasonEnum::Pause:
+				event.reason = "pause";
+				break;
+			case StoppedReasonEnum::Entry:
+				event.reason = "entry";
+				break;
+			case StoppedReasonEnum::Goto:
+				event.reason = "goto";
+				break;
+			case StoppedReasonEnum::FunctionBreakpoint:
+				event.reason = "function breakpoint";
+				break;
+			case StoppedReasonEnum::DataBreakpoint:
+				event.reason = "data breakpoint";
+				break;
+			case StoppedReasonEnum::InstructionBreakpoint:
+				event.reason = "instruction breakpoint";
+				break;
+			default:
+				break;
+		}
+		event.threadId = 1;
+		if (breakpointIndex != -1) {
+			event.hitBreakpointIds = { breakpointIndex };
+		}
+		session->send(event);
+	});
 
 	// The Initialize request is the first message sent from the client and
 	// the response reports debugger capabilities.
@@ -357,6 +410,9 @@ int main(int argc, char* argv[], char* envp[]) {
 
 				dap::StackFrame frameResponse;
 				frameResponse.id = frame.id;
+				int pos = frame.source.find_last_of("/");
+				pos = frame.source.find_last_of(frame.source.size() - pos);
+				frameResponse.name = frame.source.substr(pos);
 				frameResponse.source = source;
 				frameResponse.line = frame.line;
 
@@ -446,14 +502,23 @@ int main(int argc, char* argv[], char* envp[]) {
 		logger->startTrace("nextRequest");
 
 		if (client->next()) {
-			dap::StoppedEvent event;
-			event.reason = "step";
-			event.threadId = 1;
-			//event.hitBreakpointIds = breakpoint->index;
-			session->send(event);
+			sendStoppedEvent(StoppedReasonEnum::Step);
 		}
 
 		logger->endTrace("nextRequest");
+
+		return response;							 }
+	);
+	
+	session->registerHandler([&](const dap::StepOutRequest& message) {
+		dap::StepOutResponse response;
+		logger->startTrace("stepOutRequest");
+
+		if (client->stepOut()) {
+			sendStoppedEvent(StoppedReasonEnum::Step);
+		}
+
+		logger->endTrace("stepOutRequest");
 
 		return response;							 }
 	);
@@ -463,10 +528,23 @@ int main(int argc, char* argv[], char* envp[]) {
 		logger->startTrace("pauseRequest");
 
 		if (client->interrupt()) {
-
+			sendStoppedEvent(StoppedReasonEnum::Pause);
 		}
 
-		logger->endTrace("nextRequest");
+		logger->endTrace("pauseRequest");
+
+		return response;							 }
+	);
+
+	session->registerHandler([&](const dap::ContinueRequest& message) {
+		dap::ContinueResponse response;
+		logger->startTrace("continueRequest");
+
+		if (client->continue_()) {
+			waitServer == WaitServerEnum::DontWaitServer;
+		}
+
+		logger->endTrace("continueRequest");
 
 		return response;							 }
 	);
@@ -522,20 +600,16 @@ int main(int argc, char* argv[], char* envp[]) {
 
 			if (breakpoint) {
 				waitServer = WaitServerEnum::NormalProcess;
-				dap::StoppedEvent event;
-				event.reason = "breakpoint";
-				event.threadId = 1;
-				//event.hitBreakpointIds = breakpoint->index;
+
+				dap::BreakpointEvent event;
+				dap::Source source;
+				source.path = breakpoint->source;
+
+				event.breakpoint.source = source;
+				event.breakpoint.line  = breakpoint->line;
+
 				session->send(event);
-
-				//dap::BreakpointEvent event;
-				//dap::Source source;
-				//source.path = breakpoint->source;
-
-				//event.breakpoint.source = source;
-				//event.breakpoint.line  = breakpoint->line;
-
-				//session->send(event);
+				sendStoppedEvent(StoppedReasonEnum::Breakpoint, 1);
 			}
 		}
 	};
