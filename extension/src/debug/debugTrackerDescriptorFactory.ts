@@ -16,6 +16,7 @@ limitations under the License.
 
 import * as vscode from 'vscode';
 import { pp } from '../extension';
+import { getSuConfiguration } from './debugConfigs';
 
 export class SuDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory {
 	constructor(
@@ -23,10 +24,9 @@ export class SuDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerF
 	) { }
 
 	createDebugAdapterTracker(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterTracker> {
-		const self = this;
 		let tracker: vscode.DebugAdapterTracker = {};
 
-		if (session.configuration.trace !== "off") {
+		if (getSuConfiguration().trace !== "off") {
 			tracker = {
 				onWillStartSession(): void {
 					pp("[Start session]\n" + JSON.stringify(session));
@@ -46,7 +46,7 @@ export class SuDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerF
 					pp(`<<< OnExit >>>\n`, `Exit code: ${code}`);
 				},
 				onDidSendMessage(message: any) {
-					if (session.configuration.trace === "verbose") {
+					if (getSuConfiguration().trace === "verbose") {
 						if (message.type === "event") {
 							pp(`<<< DA->VSCode event ${message.event}\n`, message);
 						} else {
@@ -61,24 +61,15 @@ export class SuDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerF
 					}
 				},
 				onWillReceiveMessage(message: any) {
-					if (session.configuration.trace === "verbose") {
+					if (getSuConfiguration().trace === "verbose") {
 						pp(`>>> VSCode->DA ${message.command}\n`, message);
 					} else {
 						pp(`>>> VSCode->DA ${message.command}`);
 					}
 				}
 			};
-			// } else {
-			// 	tracker.onDidSendMessage = (message: any): void => {
-			// 		self.publishMessage(message);
-			// 	};
-			// }
 		}
 
 		return tracker;
-	}
-
-	private publishMessage(message: any) {
-		//this._emitter.fire(message);
 	}
 }

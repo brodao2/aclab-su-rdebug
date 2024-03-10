@@ -16,7 +16,7 @@ limitations under the License.
 
 import * as vscode from "vscode";
 import * as path from "path";
-import { SuDebugConfiguration } from "./debugConfigs";
+import { SuDebugConfiguration, getSuConfiguration } from "./debugConfigs";
 import { SketchUpProcess } from "./sketchUpProcess";
 
 let sketchUpProcess: SketchUpProcess | undefined = undefined;
@@ -83,12 +83,12 @@ export class SuDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescr
 		args.push(`--remote-port=${suConfiguration.remotePort}`);
 		args.push(`--remote-workspace-root=${suConfiguration.remoteWorkspaceRoot}`);
 
-		if (suConfiguration.level) {
-			args.push(`--level=${path.join(suConfiguration.remoteWorkspaceRoot, suConfiguration.logToFile)}`);
-		}
+		if (getSuConfiguration().logToFile) {
+			if (suConfiguration.level) {
+				args.push(`--level=${path.join(suConfiguration.remoteWorkspaceRoot, getSuConfiguration().logToFile)}`);
+			}
 
-		if (suConfiguration.logToFile) {
-			args.push(`--log-to-file=${path.join(suConfiguration.remoteWorkspaceRoot, suConfiguration.logToFile)}`);
+			args.push(`--log-to-file=${path.join(suConfiguration.remoteWorkspaceRoot, getSuConfiguration().logToFile)}`);
 		}
 
 		return { command: pathDAP, args: args };

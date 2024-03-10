@@ -14,16 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { DebugConfiguration } from "vscode";
+import * as vscode from "vscode";
 
-export interface SuDebugConfiguration extends DebugConfiguration {
+//deve ser espelho do definido no package.json
+export interface SuDebugConfiguration extends vscode.DebugConfiguration {
   remotePort: number;
   remoteWorkspaceRoot: string;
-  trace: "off" | "message" | "verbose";
-  logToFile: string;
   sketchUpProgram: string;
   sketchUpArguments: string[];
   level: "critical" | "error" | "warn" | "info" | "debug" | "trace" | "off";
   verbose: boolean;
 }
 
+//deve ser espelho do definido no package.json
+export interface SuExtensionConfiguration {
+  trace: "off" | "message" | "verbose";
+  logToFile: string;
+}
+
+export function getSuConfiguration(): SuExtensionConfiguration {
+  const config: any = vscode.workspace.getConfiguration("tds-dito");
+
+  return config as SuExtensionConfiguration;
+}

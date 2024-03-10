@@ -71,7 +71,9 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.debug.onDidChangeActiveDebugSession(
 			(debugEvent: vscode.DebugSession | undefined) => {
-				console.log("onDidChangeActiveDebugSession");
+				if (debugEvent) {
+					vscode.window.showInformationMessage("Debugger process ready to use.");
+				}
 			}
 		)
 	);
