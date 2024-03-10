@@ -40,7 +40,9 @@
     "--- CONTRIBUTORS ---": "",
     "contributors:add": "all-contributors add",
     "contributors:generate": "all-contributors generate",
-    "contributors:check": "all-contributors check"
+    "contributors:check": "all-contributors check",
+    "-- SketchUp --": "",
+    "run": "\"c:\\Program Files\\SketchUp\\SketchUp 2023\\SketchUp.exe\" -rdebug \"ide port=7000\""
   },
   "dependencies": {
     "@types/vscode": "^1.86.0",
@@ -67,6 +69,34 @@
     "onDebug"
   ],
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "AcLab SU Debugger",
+      "properties": {
+        "aclab-su-rdebug.trace": {
+          "order": 0,
+          "type": "string",
+          "default": "off",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "description": "Traces the communication between VS Code and the Debug Adapter executable.",
+          "enumDescriptions": [
+            "Tracking off.",
+            "Display summary message",
+            "Display detailed message"
+          ]
+        },
+        "aclab-su-rdebug.logToFile": {
+          "order": 1,
+          "type": "string",
+          "description": "Filename to record log of the Debug Adapter executable file.",
+          "default": ""
+        }
+      }
+    },
     "breakpoints": [
       {
         "language": "ruby"
@@ -78,11 +108,12 @@
         "languages": [
           "ruby"
         ],
-        "label": "Attach to SketchUp",
+        "label": "SketchUp Debugger Extension",
         "configurationAttributes": {
           "launch": {
             "required": [
-              "sketchUpProgram"
+              "sketchUpProgram",
+              "remotePort"
             ],
             "properties": {
               "sketchUpProgram": {
@@ -96,7 +127,7 @@
                 "default": []
               },
               "remotePort": {
-                "type": "number|string",
+                "type": "number",
                 "description": "Remote port.",
                 "default": 1234
               },
@@ -104,30 +135,13 @@
                 "type": "string",
                 "description": "Extension Development Path (root).",
                 "default": "${workspaceFolder}"
-              },
-              "trace": {
-                "type": "string",
-                "default": "off",
-                "enum": [
-                  "off",
-                  "messages",
-                  "verbose"
-                ],
-                "description": "Traces the communication between VS Code and the Debug Adapter executable.",
-                "enumDescriptions": [
-                  "Tracking off.",
-                  "Display summary message",
-                  "Display detailed message"
-                ]
-              },
-              "logToFile": {
-                "type": "string",
-                "description": "Filename to record log of the Debug Adapter executable file.",
-                "default": ""
               }
             }
           },
           "attach": {
+            "required": [
+              "remotePort"
+            ],
             "properties": {
               "remotePort": {
                 "type": "number",
@@ -138,26 +152,6 @@
                 "type": "string",
                 "description": "Extension Development Path (root).",
                 "default": "${workspaceFolder}"
-              },
-              "trace": {
-                "type": "string",
-                "default": "off",
-                "enum": [
-                  "off",
-                  "messages",
-                  "verbose"
-                ],
-                "description": "Traces the communication between VS Code and the Debug Adapter executable.",
-                "enumDescriptions": [
-                  "Tracking off.",
-                  "Display summary message",
-                  "Display detailed message"
-                ]
-              },
-              "logToFile": {
-                "type": "string",
-                "description": "Filename to record log of the Debug Adapter executable file.",
-                "default": ""
               }
             }
           }
@@ -167,8 +161,7 @@
             "type": "aclab-su-rdebug",
             "request": "attach",
             "name": "Attach to SketchUp",
-            "sketchUpProgram": "C:\\\\Program Files\\\\SketchUp\\\\SketchUp 2023\\\\SketchUp.exe",
-            "stopOnEntry": true
+            "sketchUpProgram": "C:\\\\Program Files\\\\SketchUp\\\\SketchUp 2023\\\\SketchUp.exe"
           }
         ],
         "configurationSnippets": [
@@ -179,8 +172,7 @@
               "type": "aclab-su-rdebug",
               "request": "attach",
               "name": "Attach to SketchUp",
-              "remotePort": 1234,
-              "stopOnEntry": true
+              "remotePort": 1234
             }
           },
           {
@@ -192,7 +184,6 @@
               "name": "Launch SketchUp and attach",
               "sketchUpProgram": "C:\\\\Program Files\\\\SketchUp\\\\SketchUp ${1|2023,2022,2021,2020,2019}\\\\SketchUp.exe",
               "remotePort": 1234,
-              "stopOnEntry": true,
               "sketchUpArguments": [
                 "\\${workspaceFolder}\\\\sample\\\\${sampleFile}.skp"
               ]
