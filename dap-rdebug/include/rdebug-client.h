@@ -115,6 +115,7 @@ protected:
 
 	bool addScopeMap(Scope* scope);
 	bool removeScopeMap(Scope* scope);
+	std::string cleanHtmlEntities(std::string value);
 
 public:
 	static RDebugClient* createRDebugClient(int remotePort);

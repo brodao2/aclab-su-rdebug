@@ -157,7 +157,9 @@ const std::string_view CMD_VAR_LOCAL = "var local";
 const std::regex ADD_BREAKPOINT_RESPONSE_RE(R"(<breakpointAdded no=\"(\d+)\"[^>]+>)", std::regex_constants::icase);
 const std::regex THREAD_LINE_RESPONSE_RE(R"(<thread id=\"(\d+)\" status=\"(\w+)\"[^>]+>)", std::regex_constants::icase);
 const std::regex FRAME_RESPONSE_RE(R"(<frame no\s*=\s*\"(\d+)\"\s*file\s*=\s*\"([^\"]*)\"\s*line\s*=\s*\"(\d+)\"\s*(currents*=s*"yes")?\s*\/>)", std::regex_constants::icase);
-const std::regex VARIABLE_RESPONSE_RE(R"(<variable\s+name=\"(\w+)\"\s+kind=\"(\w+)\"\s+value=\"([^\"]*)\"\s+type=\"(\w+)\"\s+hasChildren=\"(true|false)\"\s+objectId=\"(0x[0-9a-fA-F]+)\"\s*\/>)", std::regex_constants::icase);
+const std::regex VARIABLE_RESPONSE_RE(R"(<variable\s+name=\"(\w+)\"\s+kind=\"([^\"]+)\"\s+value=\"([^\"]+)\"\s+type=\"([^\"]+)\"\s+hasChildren=\"(true|false)\"\s+objectId=\"(0x[0-9a-fA-F]+)\"\s*\/>)", std::regex_constants::icase);
+
+const std::regex HTML_ENTITE_RE(R"(#&[^;]+;)", std::regex_constants::icase);
 
 bool RDebugClient::start() {
 	logger->startTrace("RDebugClient::start");
@@ -505,7 +507,7 @@ bool RDebugClient::getVariables(Scope* scope) {
 
 				//variable->name = match[1];
 				variable->type = match[4];
-				variable->value = match[3];
+				variable->value = this->cleanHtmlEntities(match[3]);
 				variable->namedVariables= match[5] == "false" ? 0 : 1;
 				variable->object_id = match[6];
 				variable->evaluateName = variable->name;
@@ -518,6 +520,11 @@ bool RDebugClient::getVariables(Scope* scope) {
 
 	logger->endTrace("RDebugClient::getVariables");
 	return scope->variables.size() > 0;
+}
+
+std::string RDebugClient::cleanHtmlEntities(std::string value) {
+
+	return std::regex_replace(value, HTML_ENTITE_RE, "");
 }
 
 bool RDebugClient::addScopeMap(Scope* scope) {

@@ -410,7 +410,6 @@ int main(int argc, char* argv[], char* envp[]) {
 				dap::StackFrame frameResponse;
 				frameResponse.id = frame.id;
 				int pos = frame.source.find_last_of("/");
-				pos = frame.source.find_last_of(frame.source.size() - pos);
 				frameResponse.name = frame.source.substr(pos);
 				frameResponse.source = source;
 				frameResponse.line = frame.line;
